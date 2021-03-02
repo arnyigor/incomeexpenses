@@ -1,0 +1,21 @@
+plugins {
+    id 'com.android.application'
+    id 'kotlin-android'
+    id 'kotlin-kapt'
+}
+
+apply from: "$dep_aliases"
+apply from: "$rootProject.projectDir/commonconfig.gradle"
+
+android {
+}
+
+dependencies {
+    kotlin()
+    appcompat()
+    material()
+    constraintlayout()
+    lifecycle()
+    navigation()
+    tests()
+}

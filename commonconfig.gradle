@@ -1,0 +1,84 @@
+android {
+    signingConfigs {
+        release
+    }
+    compileSdkVersion versions.compileSdkVersion
+    buildToolsVersion versions.buildToolsVersion
+    def vMajor = 0
+    def vMinor = 0
+    def vBuild = 2
+    defaultConfig {
+        minSdkVersion versions.minSdkVersion
+        targetSdkVersion versions.targetSdkVersion
+        applicationId 'com.arnigor.incomeexpenses'
+        versionCode vMajor * 100 + vMinor * 10 + vBuild
+        def name = "${vMajor}" + ".${vMinor}" + ".${vBuild}"
+        versionName "v$name($versionCode)"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+
+        javaCompileOptions {
+            annotationProcessorOptions {
+                arguments = [
+                        "dagger.experimentalDaggerErrorMessages": "enabled"
+                ]
+            }
+        }
+    }
+
+    testOptions {
+        unitTests {
+            includeAndroidResources = true
+        }
+    }
+
+    packagingOptions {
+    }
+
+    sourceSets {
+        main.java.srcDirs += "src/main/kotlin"
+        test.java.srcDirs += "src/test/kotlin"
+        androidTest.java.srcDirs += "src/androidTest/kotlin"
+        test.resources.srcDirs += 'src/unitTests/resources'
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    kotlinOptions {
+        jvmTarget = '1.8'
+        freeCompilerArgs += "-Xuse-experimental=kotlin.Experimental"
+    }
+
+    buildFeatures {
+        viewBinding true
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.release
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+
+        debug {
+            applicationIdSuffix '.debug'
+            versionNameSuffix '-DEBUG'
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            testCoverageEnabled = true
+        }
+    }
+
+    testOptions.unitTests.all {
+        jvmArgs "-XX:+UnlockExperimentalVMOptions", "-XX:+UseCGroupMemoryLimitForHeap"
+    }
+}
+android.applicationVariants.all { variant ->
+    variant.outputs.all {
+        if (outputFileName.endsWith('.apk')) {
+            outputFileName = "incomeexpenses-${variant.versionName}-${buildType.name}.apk"
+        }
+    }
+}
