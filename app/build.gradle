@@ -1,9 +1,7 @@
-plugins {
-    id 'com.android.application'
-    id 'kotlin-android'
-    id 'kotlin-kapt'
-}
-
+apply plugin: 'com.android.application'
+apply plugin: 'kotlin-android'
+apply plugin: 'com.google.gms.google-services'
+apply plugin: 'kotlin-kapt'
 apply from: "$dep_aliases"
 apply from: "$rootProject.projectDir/commonconfig.gradle"
 
@@ -13,9 +11,15 @@ android {
 dependencies {
     kotlin()
     appcompat()
+    firebaseBom()
     material()
     constraintlayout()
     lifecycle()
+    rxjava2()
     navigation()
     tests()
+    firebaseAuth()
+    googleAuth()
+    googleApiClient()
+    googleSheets()
 }
