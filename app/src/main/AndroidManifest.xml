@@ -3,6 +3,7 @@
     package="com.arnigor.incomeexpenses">
 
     <uses-permission android:name="android.permission.GET_ACCOUNTS" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.MANAGE_ACCOUNTS" />
     <uses-permission android:name="android.permission.USE_CREDENTIALS" />
     <uses-permission android:name="android.permission.INTERNET" />
@@ -15,7 +16,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.IncomeExpenses">
         <activity
-            android:name=".MainActivity"
+            android:name=".ui.MainActivity"
             android:exported="true"
             android:label="@string/app_name"
             android:theme="@style/Theme.IncomeExpenses.NoActionBar">

@@ -80,8 +80,18 @@ ext {
         implementation 'com.google.firebase:firebase-firestore-ktx'
     }}
 
-    exomedia = { version = '4.3.0' -> Alias {
-        implementation "com.devbrackets.android:exomedia:$version"
+    googleSheets = { version = 'v4-rev612-1.25.0' -> Alias {
+        implementation("com.google.apis:google-api-services-sheets:$version")
+    }}
+
+    googleAuth = { version = '19.0.0' -> Alias {
+        implementation "com.google.android.gms:play-services-auth:$version"
+    }}
+
+    googleApiClient = { version = '1.23.0' -> Alias {
+        implementation('com.google.api-client:google-api-client-android:1.23.0') {
+            exclude group: 'org.apache.httpcomponents'
+        }
     }}
 
     exoplayer = { version = '2.12.2' -> Alias {
