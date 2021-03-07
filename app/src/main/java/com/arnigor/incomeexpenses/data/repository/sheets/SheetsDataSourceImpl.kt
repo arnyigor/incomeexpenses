@@ -28,6 +28,8 @@ class SheetsDataSourceImpl @Inject constructor() : SheetsDataSource {
     ): List<List<Any>> {
         return sheetsApi().spreadsheets().values()
             .get(spreadsheetId, spreadsheetRange)
+//            .setMajorDimension("COLUMNS")
+//            .setValueRenderOption("FORMULA")
             .execute().getValues() as List<List<Any>>
     }
 

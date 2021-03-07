@@ -8,6 +8,7 @@ import android.view.View
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
+import com.arnigor.incomeexpenses.BuildConfig
 import com.arnigor.incomeexpenses.R
 import com.arnigor.incomeexpenses.data.manager.AuthenticationManager
 import com.arnigor.incomeexpenses.databinding.FragmentHomeBinding
@@ -48,7 +49,12 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
     private val binding by viewBinding { FragmentHomeBinding.bind(it).also(::initBinding) }
 
     private fun initBinding(binding: FragmentHomeBinding) = with(binding) {
-
+        mBtnSign.setOnClickListener {
+            btnSingnInClick()
+        }
+        mBtnGetData.setOnClickListener {
+            homeViewModel.readSpreadsheet(binding.tiedtSheetLink.text.toString())
+        }
     }
 
     override fun onAttach(context: Context) {
@@ -63,29 +69,30 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         if (signedIn) {
             updateAccountCredential()
             homeViewModel.initSheetsApi(googleAccountCredential)
-            homeViewModel.readSpreadsheet()
+            homeViewModel.readSpreadsheet(binding.tiedtSheetLink.text.toString())
         }
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         initCredential()
+        if (BuildConfig.DEBUG) {
+            binding.tiedtSheetLink.setText("https://docs.google.com/spreadsheets/d/14IWxF8lv_6ZaX5IUMaBwASSyX-hOV-OuCGs6Dj5MmXE/edit?usp=drivesdk")
+        }
         homeViewModel.toast.observe(viewLifecycleOwner, {
             Toast.makeText(requireContext(), it, Toast.LENGTH_LONG).show()
         })
-        homeViewModel.text.observe(viewLifecycleOwner, {
-            binding.tvInfo.text = it
-        })
-        binding.mBtnSign.setOnClickListener {
-            if (signedIn) {
-                getGoogleClient()?.signOut()?.addOnCompleteListener {
-                    signedIn = false
-                }
-            } else {
-                registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-                    handleActivityResult(result.data)
-                }.launch(getGoogleClient()?.signInIntent)
+    }
+
+    private fun btnSingnInClick() {
+        if (signedIn) {
+            getGoogleClient()?.signOut()?.addOnCompleteListener {
+                signedIn = false
             }
+        } else {
+            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+                handleActivityResult(result.data)
+            }.launch(getGoogleClient()?.signInIntent)
         }
     }
 
@@ -122,7 +129,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
                 updateAccountCredential()
                 signedIn = googleAccountCredential?.selectedAccount != null
                 homeViewModel.initSheetsApi(googleAccountCredential)
-                homeViewModel.readSpreadsheet()
+                homeViewModel.readSpreadsheet(binding.tiedtSheetLink.text.toString())
             }
             .addOnFailureListener { exception: Exception? ->
                 Toast.makeText(requireContext(), "Unable to sign in", Toast.LENGTH_SHORT).show()

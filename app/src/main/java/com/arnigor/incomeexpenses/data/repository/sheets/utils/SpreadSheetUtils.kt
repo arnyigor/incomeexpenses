@@ -15,19 +15,24 @@ fun getColumnNumFromName(name: String): Int {
     val size = chars.size
     chars.forEachIndexed { indexVal, char ->
         val index = letters.indexOf(char)
+        val i = index + 1
         if (size == 1) {
-            val i = index + 1
             return i
         } else {
-            val i = indexVal * length + index + 1
-            result += i // TODO: 07.03.2021 "BA" не работает
+            result += if (indexVal == 0) {
+                i * length
+            } else {
+                i
+            }
         }
     }
-    val i = result - 1
-    return i
+    return result
 }
 
-fun getLastColumnNameFromSize(size: Int): String {
+fun getLastColumnNameFromColumnPosition(size: Int?): String {
+    if (size == null) {
+        return ""
+    }
     val letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
     val length = letters.length
     val first = size / length
