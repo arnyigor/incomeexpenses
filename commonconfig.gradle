@@ -15,7 +15,6 @@ android {
         def name = "${vMajor}" + ".${vMinor}" + ".${vBuild}"
         versionName "v$name($versionCode)"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-
         javaCompileOptions {
             annotationProcessorOptions {
                 arguments = [

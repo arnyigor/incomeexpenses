@@ -1,25 +1,24 @@
 package com.arnigor.incomeexpenses.ui.home
 
 import androidx.lifecycle.ViewModel
-import com.arnigor.incomeexpenses.data.repository.sheets.SheetsAPIDataSource
+import androidx.lifecycle.viewModelScope
 import com.arnigor.incomeexpenses.data.repository.sheets.SheetsRepository
 import com.arnigor.incomeexpenses.utils.mutableLiveData
-import com.google.api.client.extensions.android.http.AndroidHttp
 import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential
 import com.google.api.client.googleapis.extensions.android.gms.auth.GooglePlayServicesAvailabilityIOException
 import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException
-import com.google.api.client.json.jackson2.JacksonFactory
-import com.google.api.services.sheets.v4.Sheets
-import io.reactivex.android.schedulers.AndroidSchedulers
-import io.reactivex.schedulers.Schedulers
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
 
-class HomeViewModel : ViewModel() {
+class HomeViewModel(
+    private val sheetsRepository: SheetsRepository
+) : ViewModel() {
     private companion object {
         const val spreadsheetId = "1-DarqouKnAaiJObO1tV9RD_JL5KeCuhsjm3oC1xytzs"
         const val range = "A1:AZ15"
     }
 
-    private var sheetsRepository: SheetsRepository? = null
     val toast = mutableLiveData<String>(null)
     val text = mutableLiveData<String>(null)
 
@@ -28,44 +27,45 @@ class HomeViewModel : ViewModel() {
     }
 
     private fun startReadingSpreadsheet() {
-        sheetsRepository?.let { repository ->
-            repository.readSpreadSheet(spreadsheetId, range)
-                .subscribeOn(Schedulers.computation())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({
+        viewModelScope.launch {
+            flow { emit(sheetsRepository.readSpreadSheet(spreadsheetId, range)) }
+                .map { values ->
+                    if (values.isNotEmpty()) {
+                        val list = mutableListOf<String>()
+                        for (row in values) {
+//                        list.add(String.format("%s, %s\n", row[0], row[4]))
+                        }
+                        list
+                    } else {
+                        error("No data found.")
+                    }
+                }
+                .flowOn(Dispatchers.IO)
+                .catch { handleError(it) }
+                .collect {
                     println(it)
                     text.value = "Values:$it"
-                }, { mLastError ->
-                    mLastError.printStackTrace()
-                    when (mLastError) {
-                        is GooglePlayServicesAvailabilityIOException -> {
-                            toast.value =
-                                "GooglePlayServicesAvailabilityIOException:${mLastError.connectionStatusCode}"
-                        }
-                        is UserRecoverableAuthIOException -> {
-                            toast.value = "UserRecoverableAuthIOException:${mLastError.message}"
-                        }
-                        else -> {
-                            toast.value = "The following error occurred:${mLastError.message}"
-                        }
-                    }
-                })
+                }
         }
     }
 
-    fun initSheets(googleAccountCredential: GoogleAccountCredential?) {
-        googleAccountCredential?.let {
-            sheetsRepository = SheetsRepository(
-                SheetsAPIDataSource(
-                    Sheets.Builder(
-                        AndroidHttp.newCompatibleTransport(),
-                        JacksonFactory.getDefaultInstance(),
-                        googleAccountCredential
-                    )
-                        .setApplicationName("Google Sheets API Android Quickstart")
-                        .build()
-                )
-            )
+    private fun handleError(mLastError: Throwable?) {
+        mLastError?.printStackTrace()
+        when (mLastError) {
+            is GooglePlayServicesAvailabilityIOException -> {
+                toast.value =
+                    "GooglePlayServicesAvailabilityIOException:${mLastError.connectionStatusCode}"
+            }
+            is UserRecoverableAuthIOException -> {
+                toast.value = "UserRecoverableAuthIOException:${mLastError.message}"
+            }
+            else -> {
+                toast.value = "The following error occurred:${mLastError?.message}"
+            }
         }
+    }
+
+    fun initSheetsApi(googleAccountCredential: GoogleAccountCredential?) {
+        sheetsRepository.initSheetsApi(googleAccountCredential)
     }
 }

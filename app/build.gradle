@@ -11,15 +11,17 @@ android {
 dependencies {
     kotlin()
     appcompat()
+    dagger()
     firebaseBom()
     material()
     constraintlayout()
     lifecycle()
     rxjava2()
     navigation()
-    tests()
     firebaseAuth()
     googleAuth()
     googleApiClient()
     googleSheets()
+    androidTest()
+    unitTest()
 }

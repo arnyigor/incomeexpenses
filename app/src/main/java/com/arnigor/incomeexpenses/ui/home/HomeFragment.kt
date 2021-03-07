@@ -1,17 +1,17 @@
 package com.arnigor.incomeexpenses.ui.home
 
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
-import android.view.LayoutInflater
 import android.view.View
-import android.view.ViewGroup
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.ViewModelProvider
 import com.arnigor.incomeexpenses.R
 import com.arnigor.incomeexpenses.data.manager.AuthenticationManager
 import com.arnigor.incomeexpenses.databinding.FragmentHomeBinding
+import com.arnigor.incomeexpenses.utils.viewBinding
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
@@ -20,12 +20,17 @@ import com.google.android.gms.common.api.Scope
 import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential
 import com.google.api.client.util.ExponentialBackOff
 import com.google.api.services.sheets.v4.SheetsScopes
-import com.google.firebase.auth.FirebaseAuth
+import dagger.android.support.AndroidSupportInjection
+import javax.inject.Inject
 import kotlin.properties.Delegates
 
 class HomeFragment : Fragment(R.layout.fragment_home) {
+
+    private companion object {
+        const val TAG = "HomeFragment"
+    }
+
     private var googleAccountCredential: GoogleAccountCredential? = null
-    private var mAuth: FirebaseAuth? = null
 
     private var signedIn by Delegates.observable(false) { _, oldValue, newValue ->
         binding.mBtnSign.text = getString(
@@ -37,23 +42,18 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         )
     }
 
-    private companion object {
-        const val RQ_GOOGLE_SIGN_IN = 1000
-        const val TAG = "HomeFragment"
+    @Inject
+    lateinit var homeViewModel: HomeViewModel
+
+    private val binding by viewBinding { FragmentHomeBinding.bind(it).also(::initBinding) }
+
+    private fun initBinding(binding: FragmentHomeBinding) = with(binding) {
+
     }
 
-    private lateinit var homeViewModel: HomeViewModel
-    private var _binding: FragmentHomeBinding? = null
-    private val binding get() = _binding!!
-
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View {
-        homeViewModel = ViewModelProvider(this).get(HomeViewModel::class.java)
-        _binding = FragmentHomeBinding.inflate(inflater, container, false)
-        return binding.root
+    override fun onAttach(context: Context) {
+        AndroidSupportInjection.inject(this)
+        super.onAttach(context)
     }
 
     override fun onStart() {
@@ -62,14 +62,13 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         signedIn = account != null
         if (signedIn) {
             updateAccountCredential()
-            homeViewModel.initSheets(googleAccountCredential)
+            homeViewModel.initSheetsApi(googleAccountCredential)
             homeViewModel.readSpreadsheet()
         }
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        mAuth = FirebaseAuth.getInstance()
         initCredential()
         homeViewModel.toast.observe(viewLifecycleOwner, {
             Toast.makeText(requireContext(), it, Toast.LENGTH_LONG).show()
@@ -83,7 +82,9 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
                     signedIn = false
                 }
             } else {
-                startActivityForResult(getGoogleClient()?.signInIntent, RQ_GOOGLE_SIGN_IN)
+                registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+                    handleActivityResult(result.data)
+                }.launch(getGoogleClient()?.signInIntent)
             }
         }
     }
@@ -105,40 +106,32 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         )
     }
 
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == RQ_GOOGLE_SIGN_IN) {
-            GoogleSignIn.getSignedInAccountFromIntent(data)
-                .addOnSuccessListener { googleAccount: GoogleSignInAccount ->
-                    Log.d(TAG, "googleAccount:" + googleAccount.requestedScopes.map { it.scopeUri })
-                    Log.d(TAG, "googleAccount:" + googleAccount.email)
-                    Log.d(
-                        TAG,
-                        "googleAccount:grantedScopes" + googleAccount.grantedScopes.map { it.scopeUri })
-                    Toast.makeText(
-                        requireContext(),
-                        "Signed in as " + googleAccount.email,
-                        Toast.LENGTH_SHORT
-                    ).show()
-                    updateAccountCredential()
-                    signedIn = googleAccountCredential?.selectedAccount != null
-                    homeViewModel.initSheets(googleAccountCredential)
-                    homeViewModel.readSpreadsheet()
-                }
-                .addOnFailureListener { exception: Exception? ->
-                    Toast.makeText(requireContext(), "Unable to sign in", Toast.LENGTH_SHORT).show()
-                    Log.e(TAG, "Unable to sign in.", exception)
-                }
-        }
+    private fun handleActivityResult(data: Intent?) {
+        GoogleSignIn.getSignedInAccountFromIntent(data)
+            .addOnSuccessListener { googleAccount: GoogleSignInAccount ->
+                Log.d(TAG, "googleAccount:" + googleAccount.requestedScopes.map { it.scopeUri })
+                Log.d(TAG, "googleAccount:" + googleAccount.email)
+                Log.d(
+                    TAG,
+                    "googleAccount:grantedScopes" + googleAccount.grantedScopes.map { it.scopeUri })
+                Toast.makeText(
+                    requireContext(),
+                    "Signed in as " + googleAccount.email,
+                    Toast.LENGTH_SHORT
+                ).show()
+                updateAccountCredential()
+                signedIn = googleAccountCredential?.selectedAccount != null
+                homeViewModel.initSheetsApi(googleAccountCredential)
+                homeViewModel.readSpreadsheet()
+            }
+            .addOnFailureListener { exception: Exception? ->
+                Toast.makeText(requireContext(), "Unable to sign in", Toast.LENGTH_SHORT).show()
+                Log.e(TAG, "Unable to sign in.", exception)
+            }
     }
 
     private fun updateAccountCredential() {
         googleAccountCredential?.selectedAccount =
             GoogleSignIn.getLastSignedInAccount(requireContext())?.account
-    }
-
-    override fun onDestroyView() {
-        super.onDestroyView()
-        _binding = null
     }
 }

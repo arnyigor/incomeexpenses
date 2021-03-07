@@ -1,25 +1,12 @@
 package com.arnigor.incomeexpenses.data.repository.sheets
 
-import com.arnigor.incomeexpenses.data.model.SpreadsheetInfo
-import com.google.api.services.sheets.v4.Sheets
-import com.google.api.services.sheets.v4.model.Spreadsheet
-import io.reactivex.Observable
-import io.reactivex.Single
+import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential
 
-class SheetsRepository(private val sheetsAPIDataSource: SheetsAPIDataSource) {
-
-    fun readSpreadSheet(
+interface SheetsRepository {
+    suspend fun readSpreadSheet(
         spreadsheetId: String,
         spreadsheetRange: String
-    ): Single<List<MutableList<String>>> {
-        return sheetsAPIDataSource.readSpreadSheet(spreadsheetId, spreadsheetRange)
-    }
+    ): List<List<Any>>
 
-    fun readAllSpreadSheets(): Single<Sheets.Spreadsheets> {
-        return sheetsAPIDataSource.readSpreadSheets()
-    }
-
-    fun createSpreadsheet(spreadSheet: Spreadsheet): Observable<SpreadsheetInfo> {
-        return sheetsAPIDataSource.createSpreadsheet(spreadSheet)
-    }
+    fun initSheetsApi(credential: GoogleAccountCredential?)
 }
