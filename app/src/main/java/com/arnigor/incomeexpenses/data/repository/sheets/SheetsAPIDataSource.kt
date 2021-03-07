@@ -24,7 +24,7 @@ class SheetsAPIDataSource(
                 if (values.isNotEmpty()) {
                     val list = mutableListOf<String>()
                     for (row in values) {
-                        list.add(String.format("%s, %s\n", row[0], row[4]))
+//                        list.add(String.format("%s, %s\n", row[0], row[4]))
                     }
                     list
                 } else {
@@ -34,9 +34,12 @@ class SheetsAPIDataSource(
             .toList()
     }
 
-    override fun readSpreadSheets(): Single<Sheets.Spreadsheets> {
-        return Single.fromCallable { sheetsAPI.spreadsheets() }
-
+    override fun readSpreadSheetData(spreadsheetId: String): Single<String> {
+        return Single.fromCallable { sheetsAPI.spreadsheets().get(spreadsheetId).execute() }
+            .map {
+                it.sheets[0].properties
+                ""
+            }
     }
 
     override fun createSpreadsheet(spreadSheet: Spreadsheet): Observable<SpreadsheetInfo> {

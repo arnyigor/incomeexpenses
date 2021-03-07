@@ -16,7 +16,7 @@ import io.reactivex.schedulers.Schedulers
 class HomeViewModel : ViewModel() {
     private companion object {
         const val spreadsheetId = "1-DarqouKnAaiJObO1tV9RD_JL5KeCuhsjm3oC1xytzs"
-        const val range = "A1:AF15"
+        const val range = "A1:AZ15"
     }
 
     private var sheetsRepository: SheetsRepository? = null
@@ -24,10 +24,10 @@ class HomeViewModel : ViewModel() {
     val text = mutableLiveData<String>(null)
 
     fun readSpreadsheet() {
-        startReadingSpreadsheet(spreadsheetId, range)
+        startReadingSpreadsheet()
     }
 
-    private fun startReadingSpreadsheet(spreadsheetId: String, range: String) {
+    private fun startReadingSpreadsheet() {
         sheetsRepository?.let { repository ->
             repository.readSpreadSheet(spreadsheetId, range)
                 .subscribeOn(Schedulers.computation())
