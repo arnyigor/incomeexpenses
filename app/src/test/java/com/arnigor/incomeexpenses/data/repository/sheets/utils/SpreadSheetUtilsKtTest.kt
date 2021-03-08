@@ -14,13 +14,13 @@ class SpreadSheetUtilsKtTest {
 
     @Test
     fun getLastColumnNameFromSize() {
-        assert("B" == getLastColumnNameFromColumnPosition(2))
-        assert("Z" == getLastColumnNameFromColumnPosition(26))
-        assert("AA" == getLastColumnNameFromColumnPosition(27))
-        assert("AF" == getLastColumnNameFromColumnPosition(32))
-        assert("AZ" == getLastColumnNameFromColumnPosition(52))
-        assert("BA" == getLastColumnNameFromColumnPosition(53))
-        assert("BZ" == getLastColumnNameFromColumnPosition(78))
+        assert("B" == getColumnNameFromColumnPosition(2))
+        assert("Z" == getColumnNameFromColumnPosition(26))
+        assert("AA" == getColumnNameFromColumnPosition(27))
+        assert("AF" == getColumnNameFromColumnPosition(32))
+        assert("AZ" == getColumnNameFromColumnPosition(52))
+        assert("BA" == getColumnNameFromColumnPosition(53))
+        assert("BZ" == getColumnNameFromColumnPosition(78))
     }
 
     @Test

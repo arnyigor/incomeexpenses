@@ -8,14 +8,14 @@ data class SpreadSheetData(
 )
 
 data class MonthData(
-    val monthName: String,
-    val payments: List<Payment>,
+    val monthName: String? = null,
+    val payments: List<Payment>? = emptyList(),
     val totalIncome: BigDecimal? = null,
     val totalOutcome: BigDecimal? = null
 )
 
 data class Payment(
-    val paymentCategory: PaymentCategory,
+    val paymentCategory: PaymentCategory? = null,
     val formula: String? = null,
     val value: BigDecimal? = null
 )

@@ -7,10 +7,10 @@ import android.util.Log
 import android.view.View
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import com.arnigor.incomeexpenses.BuildConfig
 import com.arnigor.incomeexpenses.R
-import com.arnigor.incomeexpenses.data.manager.AuthenticationManager
 import com.arnigor.incomeexpenses.databinding.FragmentHomeBinding
 import com.arnigor.incomeexpenses.utils.viewBinding
 import com.google.android.gms.auth.api.signin.GoogleSignIn
@@ -82,6 +82,15 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         homeViewModel.toast.observe(viewLifecycleOwner, {
             Toast.makeText(requireContext(), it, Toast.LENGTH_LONG).show()
         })
+        homeViewModel.data.observe(viewLifecycleOwner, {
+            binding.tvData.text = it
+        })
+        homeViewModel.loading.observe(viewLifecycleOwner, { loading ->
+            binding.progressBar.isVisible = loading
+            binding.mBtnGetData.isEnabled = !loading
+            binding.mBtnSign.isEnabled = !loading
+            binding.tilSheetLink.isEnabled = !loading
+        })
     }
 
     private fun btnSingnInClick() {
@@ -98,7 +107,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
 
     private fun initCredential() {
         googleAccountCredential = GoogleAccountCredential
-            .usingOAuth2(requireContext(), listOf(*AuthenticationManager.SCOPES))
+            .usingOAuth2(requireContext(), listOf(SheetsScopes.SPREADSHEETS))
             .setBackOff(ExponentialBackOff())
         updateAccountCredential()
     }

@@ -29,7 +29,7 @@ fun getColumnNumFromName(name: String): Int {
     return result
 }
 
-fun getLastColumnNameFromColumnPosition(size: Int?): String {
+fun getColumnNameFromColumnPosition(size: Int?): String {
     if (size == null) {
         return ""
     }

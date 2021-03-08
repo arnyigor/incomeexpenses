@@ -3,10 +3,9 @@ package com.arnigor.incomeexpenses.ui.home
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.arnigor.incomeexpenses.data.repository.sheets.SheetsRepository
-import com.arnigor.incomeexpenses.data.repository.sheets.utils.getLastColumnNameFromColumnPosition
-import com.arnigor.incomeexpenses.data.repository.sheets.utils.getSpeadsheetIdFromLink
-import com.arnigor.incomeexpenses.ui.models.PaymentCategory
 import com.arnigor.incomeexpenses.ui.models.PaymentType
+import com.arnigor.incomeexpenses.ui.models.SpreadSheetData
+import com.arnigor.incomeexpenses.utils.DateTimeUtils
 import com.arnigor.incomeexpenses.utils.mutableLiveData
 import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential
 import com.google.api.client.googleapis.extensions.android.gms.auth.GooglePlayServicesAvailabilityIOException
@@ -14,16 +13,16 @@ import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecovera
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import java.math.BigDecimal
+import java.util.*
 
 class HomeViewModel(
     private val sheetsRepository: SheetsRepository
 ) : ViewModel() {
-    private companion object {
-        //        const val spreadsheetId = "1-DarqouKnAaiJObO1tV9RD_JL5KeCuhsjm3oC1xytzs"
-//        const val range = "A1:AZ15"
-    }
-
+    private var sheetdata: SpreadSheetData? = null
     val toast = mutableLiveData<String>(null)
+    val data = mutableLiveData<String>(null)
+    val loading = mutableLiveData(false)
 
     fun readSpreadsheet(link: String) {
         if (link.isNotBlank()) {
@@ -35,71 +34,55 @@ class HomeViewModel(
 
     private fun startReadingSpreadsheet(link: String) {
         viewModelScope.launch {
-            flow {
-                val spreadsheetId = getSpeadsheetIdFromLink(link)
-                val readSpreadSheetData = sheetsRepository.readSpreadSheetData(spreadsheetId)
-                val gridProperties = readSpreadSheetData?.gridProperties
-                val lastColumnNameFromColumnCount =
-                    getLastColumnNameFromColumnPosition(gridProperties?.columnCount)
-                val rowCount = gridProperties?.rowCount
-                val range = "A1:$lastColumnNameFromColumnCount$rowCount"
-                emit(sheetsRepository.readSpreadSheet(spreadsheetId, range))
-            }
-                .map { values ->
-                    if (values.isNotEmpty()) {
-                        val list = mutableListOf<String>()
-                        val categories = mutableListOf<PaymentCategory>()
-                        var outComeIndex = -1
-                        var startMonths = -1
-                        var outComeTotalIndex = -1
-                        var inComeTotalIndex = -1
-                        for (valuesIndexed in values.withIndex()) {
-                            val valueIndex = valuesIndexed.index
-                            val rows = valuesIndexed.value
-                            list.add(rows.toString() + "\n")
-                            for (rowsIndexed in rows.withIndex()) {
-                                val rowIndex = rowsIndexed.index
-                                val row = rowsIndexed.value
-                                val outCome = rowIndex >= outComeIndex
-                                when {
-                                    valueIndex == 1 && rowIndex > 0 -> {
-                                        val category = PaymentCategory(
-                                            row.toString(),
-                                            if (outCome) PaymentType.OUTCOME else PaymentType.INCOME,
-                                            getLastColumnNameFromColumnPosition(rowIndex + 1)
-                                        )
-                                        if (category.categoryTitle == "СУММА" &&
-                                            category.paymentType == PaymentType.INCOME
-                                        ) {
-                                            inComeTotalIndex = rowIndex
-                                        }
-                                        if (category.categoryTitle == "СУММА" &&
-                                            category.paymentType == PaymentType.OUTCOME
-                                        ) {
-                                            outComeTotalIndex = rowIndex
-                                        }
-                                        categories.add(category)
-                                    }
-                                    row == "РАСХОД" -> {
-                                        outComeIndex = rowIndex
-                                    }
-                                    row == "ЯНВАРЬ" -> {
-                                        startMonths = valueIndex
-                                    }
-                                }
-                            }
-                        }
-                        list
-                    } else {
-                        error("No data found.")
-                    }
-                }
+            flow { emit(sheetsRepository.readSpreadSheet(link)) }
                 .flowOn(Dispatchers.IO)
+                .onStart { loading.value = true }
+                .onCompletion { loading.value = false }
                 .catch { handleError(it) }
                 .collect {
-                    println(it)
+                    sheetdata = it
+                    getSelectedMonthData()
                 }
         }
+    }
+
+    private fun getSelectedMonthData(monthName: String? = null) {
+        viewModelScope.launch {
+            flow { emit(getSheetDataByMonth(monthName)) }
+                .flowOn(Dispatchers.IO)
+                .onStart { loading.value = true }
+                .onCompletion { loading.value = false }
+                .catch { handleError(it) }
+                .collect {
+                    data.value = it
+                }
+        }
+    }
+
+    private fun getSheetDataByMonth(monthName: String? = null): String {
+        val month = monthName ?: DateTimeUtils.getCurrentMonthRuFull()
+        val sb = StringBuilder().apply {
+            val md =
+                sheetdata?.monthsData?.find { month.toUpperCase(Locale.getDefault()) == it.monthName }
+            var totalIncome = BigDecimal.ZERO
+            var totalOutcome = BigDecimal.ZERO
+            md?.payments?.let { payments ->
+                for (payment in payments) {
+                    val value = payment.value ?: BigDecimal.ZERO
+                    val paymentCategory = payment.paymentCategory
+                    if (paymentCategory?.paymentType == PaymentType.INCOME) {
+                        totalIncome += value
+                    } else {
+                        totalOutcome += value
+                    }
+                    append("Категория:${paymentCategory?.categoryTitle} сумма:$value\n")
+                }
+            }
+            append("Входящие:$totalIncome\n")
+            append("Траты:$totalOutcome\n")
+            append("Остаток:${totalIncome - totalOutcome}\n")
+        }
+        return "Месяц:$month,Итого:\n$sb"
     }
 
     private fun handleError(mLastError: Throwable?) {
