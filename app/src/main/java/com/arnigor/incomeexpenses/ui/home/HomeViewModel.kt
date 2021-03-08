@@ -3,6 +3,7 @@ package com.arnigor.incomeexpenses.ui.home
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.arnigor.incomeexpenses.data.repository.sheets.SheetsRepository
+import com.arnigor.incomeexpenses.ui.models.PaymentCategory
 import com.arnigor.incomeexpenses.ui.models.PaymentType
 import com.arnigor.incomeexpenses.ui.models.SpreadSheetData
 import com.arnigor.incomeexpenses.utils.DateTimeUtils
@@ -19,9 +20,12 @@ import java.util.*
 class HomeViewModel(
     private val sheetsRepository: SheetsRepository
 ) : ViewModel() {
+    private var link: String? = null
     private var sheetdata: SpreadSheetData? = null
     val toast = mutableLiveData<String>(null)
     val data = mutableLiveData<String>(null)
+    val cell = mutableLiveData<String>(null)
+    val categories = mutableLiveData<List<PaymentCategory>>()
     val loading = mutableLiveData(false)
 
     fun readSpreadsheet(link: String) {
@@ -33,6 +37,7 @@ class HomeViewModel(
     }
 
     private fun startReadingSpreadsheet(link: String) {
+        this.link = link
         viewModelScope.launch {
             flow { emit(sheetsRepository.readSpreadSheet(link)) }
                 .flowOn(Dispatchers.IO)
@@ -42,21 +47,46 @@ class HomeViewModel(
                 .collect {
                     sheetdata = it
                     getSelectedMonthData()
+                    showCategories()
                 }
         }
     }
 
-      fun getSelectedMonthData(monthName: String? = null) {
-          viewModelScope.launch {
-              flow { emit(getSheetDataByMonth(monthName)) }
-                  .flowOn(Dispatchers.IO)
-                  .onStart { loading.value = true }
-                  .onCompletion { loading.value = false }
-                  .catch { handleError(it) }
-                  .collect {
-                      data.value = it
-                  }
-          }
+    private fun showCategories() {
+        viewModelScope.launch {
+            flowOf(sheetdata?.categories ?: emptyList())
+                .flowOn(Dispatchers.IO)
+                .catch { handleError(it) }
+                .collect {
+                    categories.value = it
+                }
+        }
+    }
+
+    fun getFullDataOfCategory(paymentCategory: PaymentCategory?, month: String) {
+        viewModelScope.launch {
+            flow { emit(sheetsRepository.readCell(link ?: "", paymentCategory, month)) }
+                .flowOn(Dispatchers.IO)
+                .onStart { loading.value = true }
+                .onCompletion { loading.value = false }
+                .catch { handleError(it) }
+                .collect {
+                    cell.value = it
+                }
+        }
+    }
+
+    fun getSelectedMonthData(monthName: String? = null) {
+        viewModelScope.launch {
+            flow { emit(getSheetDataByMonth(monthName)) }
+                .flowOn(Dispatchers.IO)
+                .onStart { loading.value = true }
+                .onCompletion { loading.value = false }
+                .catch { handleError(it) }
+                .collect {
+                    data.value = it
+                }
+        }
     }
 
     private fun getSheetDataByMonth(monthName: String? = null): String {

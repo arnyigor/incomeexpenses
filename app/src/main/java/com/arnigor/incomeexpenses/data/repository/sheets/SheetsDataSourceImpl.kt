@@ -24,13 +24,19 @@ class SheetsDataSourceImpl @Inject constructor() : SheetsDataSource {
 
     override suspend fun readSpreadSheet(
         spreadsheetId: String,
-        spreadsheetRange: String
+        spreadsheetRange: String,
+        majorDimension: String?,
+        valueRenderOption: String?
     ): List<List<Any>> {
         return sheetsApi().spreadsheets().values()
-            .get(spreadsheetId, spreadsheetRange)
-//            .setMajorDimension("COLUMNS")
-//            .setValueRenderOption("FORMULA")
-            .execute().getValues() as List<List<Any>>
+            .get(spreadsheetId, spreadsheetRange).apply {
+                if (majorDimension.isNullOrBlank().not()) {
+                    setMajorDimension(majorDimension)
+                }
+                if (valueRenderOption.isNullOrBlank().not()) {
+                    setValueRenderOption(valueRenderOption)
+                }
+            }.execute().getValues() as List<List<Any>>
     }
 
     private fun sheetsApi(): Sheets {

@@ -6,6 +6,7 @@ import com.arnigor.incomeexpenses.ui.models.*
 import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential
 import com.google.api.services.sheets.v4.model.SheetProperties
 import java.math.BigDecimal
+import java.util.*
 import javax.inject.Inject
 
 class SheetsRepositoryImpl @Inject constructor(private val sheetsAPIDataSource: SheetsDataSource) :
@@ -22,6 +23,29 @@ class SheetsRepositoryImpl @Inject constructor(private val sheetsAPIDataSource: 
 
     override suspend fun readSpreadSheetData(spreadsheetId: String): SheetProperties? =
         sheetsAPIDataSource.readSpreadSheetData(spreadsheetId)
+
+    override suspend fun readCell(link: String, paymentCategory: PaymentCategory?, month: String): String {
+        val spreadsheetId = getSpeadsheetIdFromLink(link)
+        val months =
+            sheetsAPIDataSource.readSpreadSheet(spreadsheetId, "A1:A14", majorDimension = "COLUMNS")
+        val monthIndex: Int
+        if (months.isNotEmpty()) {
+            monthIndex = months.flatten().map { it.toString() }
+                .indexOf(month.toUpperCase(Locale.getDefault()))
+        } else {
+            error("No data found.")
+        }
+        val rangeIndex = monthIndex + 1
+        val range =
+            "${paymentCategory?.sheetPosition}$rangeIndex:${paymentCategory?.sheetPosition}$rangeIndex"
+        val values = sheetsAPIDataSource.readSpreadSheet(
+            spreadsheetId = spreadsheetId,
+            spreadsheetRange = range,
+            majorDimension = "COLUMNS",
+            valueRenderOption = "FORMULA"
+        )
+        return values.flatten().getOrNull(0).toString()
+    }
 
     override suspend fun readSpreadSheet(link: String): SpreadSheetData {
         val spreadsheetId = getSpeadsheetIdFromLink(link)

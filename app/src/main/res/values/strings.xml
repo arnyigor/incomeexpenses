@@ -13,6 +13,10 @@
     <string name="sign_out">Выйти</string>
     <string name="link_to_sheet">Ссылка на таблицу</string>
     <string name="get_data">Получить данные</string>
+    <string name="input_data">Ввести значение</string>
+    <string name="save">Сохранить</string>
+    <string name="edit">Редактировать</string>
+    <string name="categories">Категория</string>
     <string-array name="monthes">
         <item>Январь</item>
         <item>Февраль</item>

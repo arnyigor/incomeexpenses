@@ -1,13 +1,17 @@
 package com.arnigor.incomeexpenses.ui.home
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.text.Editable
+import android.text.SpannableStringBuilder
 import android.util.Log
 import android.view.View
 import android.widget.AdapterView
 import android.widget.Toast
 import androidx.core.view.isVisible
+import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
 import com.arnigor.incomeexpenses.BuildConfig
 import com.arnigor.incomeexpenses.R
@@ -25,6 +29,7 @@ import dagger.android.support.AndroidSupportInjection
 import javax.inject.Inject
 import kotlin.properties.Delegates
 
+
 class HomeFragment : Fragment(R.layout.fragment_home) {
 
     private companion object {
@@ -33,6 +38,15 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
     }
 
     private var googleAccountCredential: GoogleAccountCredential? = null
+    private var categoriesAdapter: CategoriesAdapter? = null
+    private var edtState by Delegates.observable(true) { _, _, editState ->
+        binding.tilCellData.isVisible = !editState
+        if (editState) {
+            binding.btnEdt.setText(R.string.edit)
+        } else {
+            binding.btnEdt.setText(R.string.save)
+        }
+    }
 
     private var signedIn by Delegates.observable(false) { _, _, logined ->
         binding.tvData.isVisible = logined
@@ -53,6 +67,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
 
     private val binding by viewBinding { FragmentHomeBinding.bind(it).also(::initBinding) }
 
+    @SuppressLint("SetTextI18n")
     private fun initBinding(binding: FragmentHomeBinding) = with(binding) {
         mBtnGetData.setOnClickListener {
             homeViewModel.readSpreadsheet(binding.tiedtSheetLink.text.toString())
@@ -72,6 +87,22 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
 
             }
         }
+        tilCellData.setEndIconOnClickListener {
+            val toString = tiedtCellData.text.toString()
+            if (toString.endsWith("+").not()) {
+                tiedtCellData.setText("$toString+")
+            }
+            tiedtCellData.setSelection(toString.length + 1)
+        }
+        tiedtCellData.doAfterTextChanged {
+            val toString = it.toString()
+            if (toString.contains(".")) {
+                val ab: Editable = SpannableStringBuilder(toString.replace(".", ","))
+                it?.replace(0, it.length, ab)
+            }
+        }
+        categoriesAdapter = CategoriesAdapter(requireContext())
+        spinCategories.adapter = categoriesAdapter
     }
 
     override fun onAttach(context: Context) {
@@ -93,6 +124,9 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         initCredential()
+        binding.mBtnSign.setOnClickListener {
+            btnSingnInClick()
+        }
         if (BuildConfig.DEBUG) {
             binding.tiedtSheetLink.setText("https://docs.google.com/spreadsheets/d/14IWxF8lv_6ZaX5IUMaBwASSyX-hOV-OuCGs6Dj5MmXE/edit?usp=drivesdk")
         }
@@ -101,6 +135,9 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         })
         homeViewModel.data.observe(viewLifecycleOwner, {
             binding.tvData.text = it
+            binding.spinCategories.isVisible = true
+            binding.btnEdt.isVisible = true
+            binding.tvCategoriesCaption.isVisible = true
         })
         homeViewModel.loading.observe(viewLifecycleOwner, { loading ->
             binding.progressBar.isVisible = loading
@@ -108,8 +145,23 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             binding.mBtnSign.isEnabled = !loading
             binding.tilSheetLink.isEnabled = !loading
         })
-       binding.mBtnSign.setOnClickListener {
-            btnSingnInClick()
+        homeViewModel.categories.observe(viewLifecycleOwner, { categories ->
+            categoriesAdapter?.clear()
+            categoriesAdapter?.addAll(categories)
+            categoriesAdapter?.notifyDataSetChanged()
+        })
+        homeViewModel.cell.observe(viewLifecycleOwner, { cell ->
+            binding.tiedtCellData.setText(cell)
+        })
+        binding.btnEdt.setOnClickListener {
+            if (edtState) {
+                val selectedCategory =
+                    categoriesAdapter?.getItem(binding.spinCategories.selectedItemPosition)
+                val spinMonths = binding.spinMonths
+                val month = spinMonths.adapter.getItem(spinMonths.selectedItemPosition).toString()
+                homeViewModel.getFullDataOfCategory(selectedCategory, month)
+            }
+            edtState = !edtState
         }
     }
 
