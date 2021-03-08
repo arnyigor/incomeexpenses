@@ -5,8 +5,8 @@ import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.view.View
+import android.widget.AdapterView
 import android.widget.Toast
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import com.arnigor.incomeexpenses.BuildConfig
@@ -29,13 +29,18 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
 
     private companion object {
         const val TAG = "HomeFragment"
+        const val RQ_GOOGLE_SIGN_IN = 1000
     }
 
     private var googleAccountCredential: GoogleAccountCredential? = null
 
-    private var signedIn by Delegates.observable(false) { _, oldValue, newValue ->
+    private var signedIn by Delegates.observable(false) { _, _, logined ->
+        binding.tvData.isVisible = logined
+        binding.mBtnGetData.isVisible = logined
+        binding.spinMonths.isVisible = logined
+        binding.tilSheetLink.isVisible = logined
         binding.mBtnSign.text = getString(
-            if (newValue) {
+            if (logined) {
                 R.string.sign_out
             } else {
                 R.string.sign_in
@@ -49,11 +54,23 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
     private val binding by viewBinding { FragmentHomeBinding.bind(it).also(::initBinding) }
 
     private fun initBinding(binding: FragmentHomeBinding) = with(binding) {
-        mBtnSign.setOnClickListener {
-            btnSingnInClick()
-        }
         mBtnGetData.setOnClickListener {
             homeViewModel.readSpreadsheet(binding.tiedtSheetLink.text.toString())
+        }
+        spinMonths.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(
+                parent: AdapterView<*>?,
+                view: View?,
+                position: Int,
+                id: Long
+            ) {
+                val item = spinMonths.adapter.getItem(position).toString()
+                homeViewModel.getSelectedMonthData(item)
+            }
+
+            override fun onNothingSelected(parent: AdapterView<*>?) {
+
+            }
         }
     }
 
@@ -91,6 +108,9 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             binding.mBtnSign.isEnabled = !loading
             binding.tilSheetLink.isEnabled = !loading
         })
+       binding.mBtnSign.setOnClickListener {
+            btnSingnInClick()
+        }
     }
 
     private fun btnSingnInClick() {
@@ -99,9 +119,17 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
                 signedIn = false
             }
         } else {
-            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-                handleActivityResult(result.data)
-            }.launch(getGoogleClient()?.signInIntent)
+            startActivityForResult(getGoogleClient()?.signInIntent, RQ_GOOGLE_SIGN_IN)
+//            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+//                handleActivityResult(result.data)
+//            }.launch(getGoogleClient()?.signInIntent)
+        }
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == RQ_GOOGLE_SIGN_IN) {
+            handleActivityResult(data)
         }
     }
 

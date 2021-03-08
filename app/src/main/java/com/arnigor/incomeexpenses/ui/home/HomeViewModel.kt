@@ -46,17 +46,17 @@ class HomeViewModel(
         }
     }
 
-    private fun getSelectedMonthData(monthName: String? = null) {
-        viewModelScope.launch {
-            flow { emit(getSheetDataByMonth(monthName)) }
-                .flowOn(Dispatchers.IO)
-                .onStart { loading.value = true }
-                .onCompletion { loading.value = false }
-                .catch { handleError(it) }
-                .collect {
-                    data.value = it
-                }
-        }
+      fun getSelectedMonthData(monthName: String? = null) {
+          viewModelScope.launch {
+              flow { emit(getSheetDataByMonth(monthName)) }
+                  .flowOn(Dispatchers.IO)
+                  .onStart { loading.value = true }
+                  .onCompletion { loading.value = false }
+                  .catch { handleError(it) }
+                  .collect {
+                      data.value = it
+                  }
+          }
     }
 
     private fun getSheetDataByMonth(monthName: String? = null): String {
