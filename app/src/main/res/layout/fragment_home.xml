@@ -4,29 +4,12 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".ui.home.HomeFragment">
+    tools:context=".presentation.home.HomeFragment">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:padding="8dp">
-
-        <com.google.android.material.textfield.TextInputLayout
-            android:id="@+id/tilSheetLink"
-            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.Dense"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginEnd="8dp"
-            android:hint="@string/link_to_sheet"
-            app:layout_constraintEnd_toStartOf="@+id/mBtnSign"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent">
-
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/tiedtSheetLink"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content" />
-        </com.google.android.material.textfield.TextInputLayout>
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/mBtnSign"
@@ -34,6 +17,7 @@
             android:layout_height="wrap_content"
             android:text="@string/sign_in"
             app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
         <com.google.android.material.button.MaterialButton
@@ -42,8 +26,23 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:text="@string/get_data"
+            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/tilSheetLink" />
+            app:layout_constraintTop_toBottomOf="@+id/mBtnSign"
+            tools:text="@string/to_settings" />
+
+        <TextView
+            android:id="@+id/tvDocTitle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:textSize="18sp"
+            android:visibility="gone"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/mBtnGetData"
+            tools:text="Название документа"
+            tools:visibility="visible" />
 
         <ProgressBar
             android:id="@+id/progressBar"
@@ -59,23 +58,22 @@
             android:id="@+id/tvData"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/margin"
+            android:layout_marginTop="8dp"
             android:textSize="18sp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/mBtnGetData"
+            app:layout_constraintTop_toBottomOf="@+id/spinMonths"
             tools:text="Данные" />
 
         <Spinner
             android:id="@+id/spinMonths"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:layout_marginBottom="8dp"
+            android:layout_marginTop="8dp"
             android:entries="@array/monthes"
-            app:layout_constraintBottom_toTopOf="@+id/tvData"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toEndOf="@+id/mBtnGetData" />
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/tvDocTitle" />
 
         <TextView
             android:id="@+id/tvCategoriesCaption"

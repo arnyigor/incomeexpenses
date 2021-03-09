@@ -2,9 +2,10 @@ package com.arnigor.incomeexpenses.data.repository.sheets
 
 import com.arnigor.incomeexpenses.data.repository.sheets.utils.getColumnNameFromColumnPosition
 import com.arnigor.incomeexpenses.data.repository.sheets.utils.getSpeadsheetIdFromLink
-import com.arnigor.incomeexpenses.ui.models.*
+import com.arnigor.incomeexpenses.presentation.models.*
+import com.arnigor.incomeexpenses.utils.DateTimeUtils
 import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential
-import com.google.api.services.sheets.v4.model.SheetProperties
+import com.google.api.services.sheets.v4.model.Spreadsheet
 import java.math.BigDecimal
 import java.util.*
 import javax.inject.Inject
@@ -22,8 +23,11 @@ class SheetsRepositoryImpl @Inject constructor(private val sheetsAPIDataSource: 
         sheetsAPIDataSource.initApi(credential)
     }
 
-    override suspend fun readSpreadSheetData(spreadsheetId: String): SheetProperties? =
-        sheetsAPIDataSource.readSpreadSheetData(spreadsheetId)
+    override suspend fun readSpreadSheetData(link: String): Spreadsheet? {
+        val spreadsheetId = getSpeadsheetIdFromLink(link)
+        val readSpreadSheetData = sheetsAPIDataSource.readSpreadSheetData(spreadsheetId)
+        return readSpreadSheetData
+    }
 
     override suspend fun writeValue(
         link: String,
@@ -75,7 +79,10 @@ class SheetsRepositoryImpl @Inject constructor(private val sheetsAPIDataSource: 
     override suspend fun readSpreadSheet(link: String): SpreadSheetData {
         val spreadsheetId = getSpeadsheetIdFromLink(link)
         val readSpreadSheetData = readSpreadSheetData(spreadsheetId)
-        val gridProperties = readSpreadSheetData?.gridProperties
+        val year = DateTimeUtils.getDateTime("yyyy")
+        val sheets = readSpreadSheetData?.sheets
+        val sheet = sheets?.find { it.properties.title.contains(year) }
+        val gridProperties = sheet?.properties?.gridProperties
         val lastColumnNameFromColumnCount =
             getColumnNameFromColumnPosition(gridProperties?.columnCount)
         val rowCount = gridProperties?.rowCount

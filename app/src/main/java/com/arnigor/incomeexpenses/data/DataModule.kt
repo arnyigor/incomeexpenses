@@ -1,5 +1,7 @@
 package com.arnigor.incomeexpenses.data
 
+import com.arnigor.incomeexpenses.data.repository.prefs.PreferencesDataSource
+import com.arnigor.incomeexpenses.data.repository.prefs.PreferencesDataSourceImpl
 import com.arnigor.incomeexpenses.data.repository.sheets.SheetsDataSource
 import com.arnigor.incomeexpenses.data.repository.sheets.SheetsDataSourceImpl
 import com.arnigor.incomeexpenses.data.repository.sheets.SheetsRepository
@@ -17,4 +19,8 @@ interface DataModule {
     @Binds
     @Singleton
     fun bindsSheetsDataSource(repository: SheetsDataSourceImpl): SheetsDataSource
+
+    @Binds
+    @Singleton
+    fun bindsPreferencesSource(prefs: PreferencesDataSourceImpl): PreferencesDataSource
 }

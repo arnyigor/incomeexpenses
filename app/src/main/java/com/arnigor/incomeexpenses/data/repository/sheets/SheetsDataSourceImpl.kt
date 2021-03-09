@@ -5,7 +5,6 @@ import com.google.api.client.extensions.android.http.AndroidHttp
 import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential
 import com.google.api.client.json.jackson2.JacksonFactory
 import com.google.api.services.sheets.v4.Sheets
-import com.google.api.services.sheets.v4.model.SheetProperties
 import com.google.api.services.sheets.v4.model.Spreadsheet
 import com.google.api.services.sheets.v4.model.UpdateValuesResponse
 import com.google.api.services.sheets.v4.model.ValueRange
@@ -47,9 +46,8 @@ class SheetsDataSourceImpl @Inject constructor() : SheetsDataSource {
         }
     }
 
-    override suspend fun readSpreadSheetData(spreadsheetId: String): SheetProperties? {
-        val execute = sheetsApi().spreadsheets().get(spreadsheetId).execute()
-        return execute.sheets[0].properties
+    override suspend fun readSpreadSheetData(spreadsheetId: String): Spreadsheet? {
+        return sheetsApi().spreadsheets().get(spreadsheetId).execute()
     }
 
     override suspend fun writeValue(

@@ -1,4 +1,4 @@
-package com.arnigor.incomeexpenses.ui.models
+package com.arnigor.incomeexpenses.presentation.models
 
 import java.math.BigDecimal
 

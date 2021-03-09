@@ -1,7 +1,7 @@
-package com.arnigor.incomeexpenses.ui.di
+package com.arnigor.incomeexpenses.presentation.di
 
 import com.arnigor.incomeexpenses.di.ActivityScope
-import com.arnigor.incomeexpenses.ui.MainActivity
+import com.arnigor.incomeexpenses.presentation.MainActivity
 import dagger.Module
 import dagger.android.ContributesAndroidInjector
 

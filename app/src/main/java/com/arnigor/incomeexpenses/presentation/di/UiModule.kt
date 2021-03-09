@@ -1,4 +1,4 @@
-package com.arnigor.incomeexpenses.ui.di
+package com.arnigor.incomeexpenses.presentation.di
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider

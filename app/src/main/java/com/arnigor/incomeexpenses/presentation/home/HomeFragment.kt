@@ -1,0 +1,339 @@
+package com.arnigor.incomeexpenses.presentation.home
+
+import android.annotation.SuppressLint
+import android.content.Context
+import android.content.Intent
+import android.content.SharedPreferences
+import android.os.Bundle
+import android.text.Editable
+import android.text.SpannableStringBuilder
+import android.util.Log
+import android.view.View
+import android.widget.AdapterView
+import android.widget.Toast
+import androidx.core.view.isVisible
+import androidx.core.widget.doAfterTextChanged
+import androidx.fragment.app.Fragment
+import androidx.navigation.findNavController
+import androidx.preference.PreferenceManager
+import com.arnigor.incomeexpenses.R
+import com.arnigor.incomeexpenses.databinding.FragmentHomeBinding
+import com.arnigor.incomeexpenses.presentation.MainActivity
+import com.arnigor.incomeexpenses.presentation.main.HeaderDataChangedListener
+import com.arnigor.incomeexpenses.presentation.models.PaymentCategory
+import com.arnigor.incomeexpenses.utils.viewBinding
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount
+import com.google.android.gms.auth.api.signin.GoogleSignInClient
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import com.google.android.gms.common.api.Scope
+import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential
+import com.google.api.client.util.ExponentialBackOff
+import com.google.api.services.sheets.v4.SheetsScopes
+import dagger.android.support.AndroidSupportInjection
+import javax.inject.Inject
+import kotlin.properties.Delegates
+
+class HomeFragment : Fragment(R.layout.fragment_home) {
+
+    private companion object {
+        const val TAG = "HomeFragment"
+        const val RQ_GOOGLE_SIGN_IN = 1000
+    }
+
+    private var headerDataChangedListener: HeaderDataChangedListener? = null
+    private var sharedPreferences: SharedPreferences? = null
+    private var googleAccountCredential: GoogleAccountCredential? = null
+    private var categoriesAdapter: CategoriesAdapter? = null
+    private var edtState by Delegates.observable(true) { _, _, editState ->
+        binding.tilCellData.isVisible = !editState
+        if (editState) {
+            binding.btnEdt.setText(R.string.edit)
+        } else {
+            binding.btnEdt.setText(R.string.save)
+        }
+    }
+    private var signedIn by Delegates.observable(false) { _, _, logined ->
+        binding.mBtnGetData.isVisible = logined
+        binding.tvData.isVisible = hasLink && logined
+        binding.spinMonths.isVisible = hasLink && logined
+        binding.tvDocTitle.isVisible = hasLink && logined
+        binding.tilCellData.isVisible = hasLink && logined
+        binding.spinCategories.isVisible = hasLink && logined
+        binding.btnEdt.isVisible = hasLink && logined
+        binding.tvCategoriesCaption.isVisible = hasLink && logined
+        binding.mBtnSign.text = getString(
+            if (logined) {
+                R.string.sign_out
+            } else {
+                R.string.sign_in
+            }
+        )
+    }
+
+    private var hasLink by Delegates.observable(false) { _, _, hasLink ->
+        binding.tvData.isVisible = hasLink
+        binding.spinMonths.isVisible = hasLink
+        binding.tilCellData.isVisible = hasLink
+        binding.spinCategories.isVisible = hasLink
+        binding.btnEdt.isVisible = hasLink
+        binding.tvCategoriesCaption.isVisible = hasLink
+        if (hasLink) {
+            binding.mBtnGetData.text = getString(R.string.get_data)
+        } else {
+            binding.mBtnGetData.text = getString(R.string.to_settings)
+        }
+    }
+
+    private val binding by viewBinding { FragmentHomeBinding.bind(it).also(::initBinding) }
+
+    @Inject
+    lateinit var homeViewModel: HomeViewModel
+
+    @SuppressLint("SetTextI18n")
+    private fun initBinding(binding: FragmentHomeBinding) = with(binding) {
+        tilCellData.setEndIconOnClickListener {
+            val toString = tiedtCellData.text.toString()
+            if (toString.endsWith("+").not()) {
+                tiedtCellData.setText("$toString+")
+            }
+            tiedtCellData.setSelection(toString.length + 1)
+        }
+        tiedtCellData.doAfterTextChanged {
+            val toString = it.toString()
+            if (toString.contains(".")) {
+                val ab: Editable = SpannableStringBuilder(toString.replace(".", ","))
+                it?.replace(0, it.length, ab)
+            }
+        }
+        categoriesAdapter = CategoriesAdapter(requireContext())
+        spinCategories.adapter = categoriesAdapter
+    }
+
+    private fun getCategoriesAndMonths(): Pair<PaymentCategory?, String> {
+        val selectedCategory =
+            categoriesAdapter?.getItem(binding.spinCategories.selectedItemPosition)
+        val spinMonths = binding.spinMonths
+        val month = spinMonths.adapter.getItem(spinMonths.selectedItemPosition).toString()
+        return Pair(selectedCategory, month)
+    }
+
+    private fun btnSingnInClick() {
+        if (signedIn) {
+            getGoogleClient()?.signOut()?.addOnCompleteListener {
+                signedIn = false
+                hasLink = false
+                headerDataChangedListener?.headerDataChanged(null, null)
+                updatePrefs(
+                    MainActivity.PREF_KEY_USER_EMAIl to null,
+                    MainActivity.PREF_KEY_USER_NAME to null,
+                    getString(R.string.preference_key_doc_link) to ""
+                )
+            }
+        } else {
+            startActivityForResult(getGoogleClient()?.signInIntent, RQ_GOOGLE_SIGN_IN)
+//            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+//                handleActivityResult(result.data)
+//            }.launch(getGoogleClient()?.signInIntent)
+        }
+    }
+
+    private fun initCredential() {
+        googleAccountCredential = GoogleAccountCredential
+            .usingOAuth2(requireContext(), listOf(SheetsScopes.SPREADSHEETS))
+            .setBackOff(ExponentialBackOff())
+        updateAccountCredential()
+    }
+
+    private fun getGoogleClient(): GoogleSignInClient? {
+        return GoogleSignIn.getClient(
+            requireContext(),
+            GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                .requestScopes(Scope(SheetsScopes.SPREADSHEETS))
+                .requestEmail()
+                .build()
+        )
+    }
+
+    private fun handleActivityResult(data: Intent?) {
+        GoogleSignIn.getSignedInAccountFromIntent(data)
+            .addOnSuccessListener { googleAccount: GoogleSignInAccount ->
+                Toast.makeText(
+                    requireContext(),
+                    "Signed in as " + googleAccount.email,
+                    Toast.LENGTH_SHORT
+                ).show()
+                updateAccountCredential()
+                signedIn = googleAccountCredential?.selectedAccount != null
+                homeViewModel.initSheetsApi(googleAccountCredential)
+                if (hasLink) {
+                    homeViewModel.readSpreadsheet()
+                }
+            }
+            .addOnFailureListener { exception: Exception? ->
+                Toast.makeText(requireContext(), "Unable to sign in", Toast.LENGTH_SHORT).show()
+                Log.e(TAG, "Unable to sign in.", exception)
+            }
+    }
+
+    private fun updateAccountCredential() {
+        val account = GoogleSignIn.getLastSignedInAccount(requireContext())
+        val selectedAccount = account?.account
+        if (selectedAccount?.name != googleAccountCredential?.selectedAccount?.name) {
+            googleAccountCredential?.selectedAccount = selectedAccount
+            val displayName = account?.displayName
+            val email = account?.email
+            updatePrefs(
+                MainActivity.PREF_KEY_USER_EMAIl to email,
+                MainActivity.PREF_KEY_USER_NAME to displayName
+            )
+        }
+    }
+
+    private fun updatePrefs(vararg pairs: Pair<String, String?>) {
+        val edit = sharedPreferences?.edit()
+        for ((key, value) in pairs) {
+            edit?.putString(key, value)
+        }
+        edit?.apply()
+    }
+
+    override fun onAttach(context: Context) {
+        AndroidSupportInjection.inject(this)
+        super.onAttach(context)
+        if (context is HeaderDataChangedListener) {
+            headerDataChangedListener = context
+        }
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        sharedPreferences = PreferenceManager.getDefaultSharedPreferences(requireContext())
+        initCredential()
+        updateSignIn()
+        observeData()
+        uiListeners()
+        homeViewModel.updateDocLink()
+        homeViewModel.loadDocTitle()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        val account = GoogleSignIn.getLastSignedInAccount(requireContext())
+        headerDataChangedListener?.headerDataChanged(account?.displayName, account?.email)
+    }
+
+    private fun uiListeners() = with(binding) {
+        mBtnSign.setOnClickListener {
+            btnSingnInClick()
+        }
+        spinMonths.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(
+                parent: AdapterView<*>?,
+                view: View?,
+                position: Int,
+                id: Long
+            ) {
+                homeViewModel.getSelectedMonthData(
+                    spinMonths.adapter.getItem(position).toString()
+                )
+                edtState = true
+            }
+
+            override fun onNothingSelected(parent: AdapterView<*>?) {
+
+            }
+        }
+        spinCategories.onItemSelectedListener = object :
+            AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(
+                parent: AdapterView<*>?,
+                view: View?,
+                position: Int,
+                id: Long
+            ) {
+                edtState = true
+            }
+
+            override fun onNothingSelected(parent: AdapterView<*>?) {
+
+            }
+        }
+        btnEdt.setOnClickListener {
+            val (selectedCategory, month) = getCategoriesAndMonths()
+            if (edtState) {
+                homeViewModel.getFullDataOfCategory(selectedCategory, month)
+            } else {
+                homeViewModel.writeValue(
+                    selectedCategory,
+                    month,
+                    tiedtCellData.text.toString()
+                )
+            }
+            edtState = !edtState
+        }
+        mBtnGetData.setOnClickListener {
+            if (hasLink) {
+                homeViewModel.readSpreadsheet()
+            } else {
+                binding.root.findNavController()
+                    .navigate(HomeFragmentDirections.actionNavHomeToNavSettings())
+            }
+        }
+    }
+
+    private fun observeData() {
+        homeViewModel.toast.observe(viewLifecycleOwner, {
+            Toast.makeText(requireContext(), it, Toast.LENGTH_LONG).show()
+        })
+        homeViewModel.data.observe(viewLifecycleOwner, {
+            binding.tvData.text = it
+            binding.spinCategories.isVisible = true
+            binding.btnEdt.isVisible = true
+            binding.tvCategoriesCaption.isVisible = true
+            edtState = true
+        })
+        homeViewModel.loading.observe(viewLifecycleOwner, { loading ->
+            binding.progressBar.isVisible = loading
+            binding.mBtnGetData.isEnabled = !loading
+            binding.mBtnSign.isEnabled = !loading
+            binding.tilCellData.isEnabled = !loading
+            binding.btnEdt.isEnabled = !loading
+            binding.spinCategories.isEnabled = !loading
+            binding.spinMonths.isEnabled = !loading
+        })
+        homeViewModel.categories.observe(viewLifecycleOwner, { categories ->
+            categoriesAdapter?.clear()
+            categoriesAdapter?.addAll(categories)
+            categoriesAdapter?.notifyDataSetChanged()
+        })
+        homeViewModel.cell.observe(viewLifecycleOwner, { cell ->
+            binding.tiedtCellData.setText(cell)
+        })
+        homeViewModel.hasDocLink.observe(viewLifecycleOwner, { hasLink ->
+            this.hasLink = hasLink
+        })
+        homeViewModel.title.observe(viewLifecycleOwner, { title ->
+            binding.tvDocTitle.isVisible = title.isNullOrBlank().not()
+            binding.tvDocTitle.text = title
+        })
+    }
+
+    private fun updateSignIn() {
+        signedIn = GoogleSignIn.getLastSignedInAccount(requireContext()) != null
+        if (signedIn) {
+            updateAccountCredential()
+            homeViewModel.initSheetsApi(googleAccountCredential)
+            if (hasLink) {
+                homeViewModel.readSpreadsheet()
+            }
+        }
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == RQ_GOOGLE_SIGN_IN) {
+            handleActivityResult(data)
+        }
+    }
+}

@@ -6,7 +6,7 @@ android {
     buildToolsVersion versions.buildToolsVersion
     def vMajor = 0
     def vMinor = 0
-    def vBuild = 2
+    def vBuild = 1
     defaultConfig {
         minSdkVersion versions.minSdkVersion
         targetSdkVersion versions.targetSdkVersion

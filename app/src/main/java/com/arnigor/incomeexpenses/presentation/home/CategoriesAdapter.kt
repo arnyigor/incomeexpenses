@@ -1,8 +1,8 @@
-package com.arnigor.incomeexpenses.ui.home
+package com.arnigor.incomeexpenses.presentation.home
 
 import android.content.Context
-import com.arnigor.incomeexpenses.ui.models.PaymentCategory
-import com.arnigor.incomeexpenses.ui.models.PaymentType
+import com.arnigor.incomeexpenses.presentation.models.PaymentCategory
+import com.arnigor.incomeexpenses.presentation.models.PaymentType
 import com.arnigor.incomeexpenses.utils.AbstractArrayAdapter
 
 class CategoriesAdapter(context: Context) : AbstractArrayAdapter<PaymentCategory>(context) {
