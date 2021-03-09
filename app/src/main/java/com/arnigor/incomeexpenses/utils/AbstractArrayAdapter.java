@@ -77,7 +77,7 @@ public abstract class AbstractArrayAdapter<T> extends BaseAdapter implements Fil
      * @param context            The current context.
      */
     public AbstractArrayAdapter(Context context) {
-        init(context, android.R.layout.simple_spinner_item, 0, new ArrayList<>());
+        init(context, android.R.layout.simple_dropdown_item_1line, 0, new ArrayList<>());
     }
 
     /**

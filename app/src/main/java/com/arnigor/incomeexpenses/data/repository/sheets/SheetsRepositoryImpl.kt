@@ -9,6 +9,7 @@ import java.math.BigDecimal
 import java.util.*
 import javax.inject.Inject
 
+
 class SheetsRepositoryImpl @Inject constructor(private val sheetsAPIDataSource: SheetsDataSource) :
     SheetsRepository {
 
@@ -24,7 +25,37 @@ class SheetsRepositoryImpl @Inject constructor(private val sheetsAPIDataSource: 
     override suspend fun readSpreadSheetData(spreadsheetId: String): SheetProperties? =
         sheetsAPIDataSource.readSpreadSheetData(spreadsheetId)
 
-    override suspend fun readCell(link: String, paymentCategory: PaymentCategory?, month: String): String {
+    override suspend fun writeValue(
+        link: String,
+        paymentCategory: PaymentCategory?,
+        month: String,
+        cellValue: String?
+    ): Boolean {
+        val (spreadsheetId, range) = getSheetData(link, month, paymentCategory)
+        return sheetsAPIDataSource.writeValue(spreadsheetId, range, cellValue)
+    }
+
+    override suspend fun readCell(
+        link: String,
+        paymentCategory: PaymentCategory?,
+        month: String
+    ): PaymentData {
+        val (spreadsheetId, range) = getSheetData(link, month, paymentCategory)
+        val values = sheetsAPIDataSource.readSpreadSheet(
+            spreadsheetId = spreadsheetId,
+            spreadsheetRange = range,
+            majorDimension = "COLUMNS",
+            valueRenderOption = "FORMULA"
+        )
+        val cellvalue = values.flatten().getOrNull(0).toString()
+        return PaymentData(cellvalue, range)
+    }
+
+    private suspend fun getSheetData(
+        link: String,
+        month: String,
+        paymentCategory: PaymentCategory?
+    ): Pair<String, String> {
         val spreadsheetId = getSpeadsheetIdFromLink(link)
         val months =
             sheetsAPIDataSource.readSpreadSheet(spreadsheetId, "A1:A14", majorDimension = "COLUMNS")
@@ -38,13 +69,7 @@ class SheetsRepositoryImpl @Inject constructor(private val sheetsAPIDataSource: 
         val rangeIndex = monthIndex + 1
         val range =
             "${paymentCategory?.sheetPosition}$rangeIndex:${paymentCategory?.sheetPosition}$rangeIndex"
-        val values = sheetsAPIDataSource.readSpreadSheet(
-            spreadsheetId = spreadsheetId,
-            spreadsheetRange = range,
-            majorDimension = "COLUMNS",
-            valueRenderOption = "FORMULA"
-        )
-        return values.flatten().getOrNull(0).toString()
+        return Pair(spreadsheetId, range)
     }
 
     override suspend fun readSpreadSheet(link: String): SpreadSheetData {
@@ -108,11 +133,12 @@ class SheetsRepositoryImpl @Inject constructor(private val sheetsAPIDataSource: 
                             if (cellData.isNotBlank()) {
                                 categories.find { it.sheetPosition == columnName }
                                     ?.let {
+                                        val value = cellData
+                                            .replace(",", ".")
+                                            .toBigDecimalOrNull() ?: BigDecimal.ZERO
                                         val payment = Payment(
                                             paymentCategory = it,
-                                            value = cellData
-                                                .replace(",", ".")
-                                                .toBigDecimalOrNull()
+                                            value = value
                                         )
                                         payments.add(payment)
                                     }

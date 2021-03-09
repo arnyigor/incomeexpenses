@@ -16,6 +16,7 @@ import androidx.fragment.app.Fragment
 import com.arnigor.incomeexpenses.BuildConfig
 import com.arnigor.incomeexpenses.R
 import com.arnigor.incomeexpenses.databinding.FragmentHomeBinding
+import com.arnigor.incomeexpenses.ui.models.PaymentCategory
 import com.arnigor.incomeexpenses.utils.viewBinding
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
@@ -52,7 +53,11 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         binding.tvData.isVisible = logined
         binding.mBtnGetData.isVisible = logined
         binding.spinMonths.isVisible = logined
+        binding.tilCellData.isVisible = logined
+        binding.spinCategories.isVisible = logined
+        binding.btnEdt.isVisible = logined
         binding.tilSheetLink.isVisible = logined
+        binding.tvCategoriesCaption.isVisible = logined
         binding.mBtnSign.text = getString(
             if (logined) {
                 R.string.sign_out
@@ -71,21 +76,6 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
     private fun initBinding(binding: FragmentHomeBinding) = with(binding) {
         mBtnGetData.setOnClickListener {
             homeViewModel.readSpreadsheet(binding.tiedtSheetLink.text.toString())
-        }
-        spinMonths.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(
-                parent: AdapterView<*>?,
-                view: View?,
-                position: Int,
-                id: Long
-            ) {
-                val item = spinMonths.adapter.getItem(position).toString()
-                homeViewModel.getSelectedMonthData(item)
-            }
-
-            override fun onNothingSelected(parent: AdapterView<*>?) {
-
-            }
         }
         tilCellData.setEndIconOnClickListener {
             val toString = tiedtCellData.text.toString()
@@ -144,7 +134,27 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             binding.mBtnGetData.isEnabled = !loading
             binding.mBtnSign.isEnabled = !loading
             binding.tilSheetLink.isEnabled = !loading
+            binding.tilCellData.isEnabled = !loading
+            binding.btnEdt.isEnabled = !loading
+            binding.spinCategories.isEnabled = !loading
+            binding.spinMonths.isEnabled = !loading
         })
+        binding.spinMonths.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(
+                parent: AdapterView<*>?,
+                view: View?,
+                position: Int,
+                id: Long
+            ) {
+                val item = binding.spinMonths.adapter.getItem(position).toString()
+                homeViewModel.getSelectedMonthData(item)
+                edtState = true
+            }
+
+            override fun onNothingSelected(parent: AdapterView<*>?) {
+
+            }
+        }
         homeViewModel.categories.observe(viewLifecycleOwner, { categories ->
             categoriesAdapter?.clear()
             categoriesAdapter?.addAll(categories)
@@ -153,16 +163,42 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         homeViewModel.cell.observe(viewLifecycleOwner, { cell ->
             binding.tiedtCellData.setText(cell)
         })
+        binding.spinCategories.onItemSelectedListener = object :
+            AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(
+                parent: AdapterView<*>?,
+                view: View?,
+                position: Int,
+                id: Long
+            ) {
+                edtState = true
+            }
+
+            override fun onNothingSelected(parent: AdapterView<*>?) {
+
+            }
+        }
         binding.btnEdt.setOnClickListener {
+            val (selectedCategory, month) = getCategoriesAndMonths()
             if (edtState) {
-                val selectedCategory =
-                    categoriesAdapter?.getItem(binding.spinCategories.selectedItemPosition)
-                val spinMonths = binding.spinMonths
-                val month = spinMonths.adapter.getItem(spinMonths.selectedItemPosition).toString()
                 homeViewModel.getFullDataOfCategory(selectedCategory, month)
+            } else {
+                homeViewModel.writeValue(
+                    selectedCategory,
+                    month,
+                    binding.tiedtCellData.text.toString()
+                )
             }
             edtState = !edtState
         }
+    }
+
+    private fun getCategoriesAndMonths(): Pair<PaymentCategory?, String> {
+        val selectedCategory =
+            categoriesAdapter?.getItem(binding.spinCategories.selectedItemPosition)
+        val spinMonths = binding.spinMonths
+        val month = spinMonths.adapter.getItem(spinMonths.selectedItemPosition).toString()
+        return Pair(selectedCategory, month)
     }
 
     private fun btnSingnInClick() {

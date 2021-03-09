@@ -20,6 +20,8 @@ data class Payment(
     val value: BigDecimal? = null
 )
 
+data class PaymentData(val value: String?, val position: String?)
+
 data class PaymentCategory(
     val categoryTitle: String? = null,
     val paymentType: PaymentType,
@@ -27,5 +29,5 @@ data class PaymentCategory(
 )
 
 enum class PaymentType {
-    INCOME, OUTCOME, CORRECTION, UNKNOWN
+    INCOME, OUTCOME
 }

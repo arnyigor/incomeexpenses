@@ -23,4 +23,6 @@ interface SheetsDataSource {
 
     suspend fun readSpreadSheetData(spreadsheetId: String): SheetProperties?
     suspend fun createSpreadsheet(spreadSheet: Spreadsheet): SpreadsheetInfo
+
+    suspend fun writeValue(spreadsheetId: String, range: String, cellValue: String?): Boolean
 }

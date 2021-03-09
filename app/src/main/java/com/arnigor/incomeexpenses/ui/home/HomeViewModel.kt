@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.arnigor.incomeexpenses.data.repository.sheets.SheetsRepository
 import com.arnigor.incomeexpenses.ui.models.PaymentCategory
+import com.arnigor.incomeexpenses.ui.models.PaymentData
 import com.arnigor.incomeexpenses.ui.models.PaymentType
 import com.arnigor.incomeexpenses.ui.models.SpreadSheetData
 import com.arnigor.incomeexpenses.utils.DateTimeUtils
@@ -22,6 +23,7 @@ class HomeViewModel(
 ) : ViewModel() {
     private var link: String? = null
     private var sheetdata: SpreadSheetData? = null
+    private var carrentPayment: PaymentData? = null
     val toast = mutableLiveData<String>(null)
     val data = mutableLiveData<String>(null)
     val cell = mutableLiveData<String>(null)
@@ -30,14 +32,15 @@ class HomeViewModel(
 
     fun readSpreadsheet(link: String) {
         if (link.isNotBlank()) {
+            this.link = link
             startReadingSpreadsheet(link)
         } else {
             toast.value = "Пустая ссылка на документ"
         }
     }
 
+
     private fun startReadingSpreadsheet(link: String) {
-        this.link = link
         viewModelScope.launch {
             flow { emit(sheetsRepository.readSpreadSheet(link)) }
                 .flowOn(Dispatchers.IO)
@@ -55,6 +58,7 @@ class HomeViewModel(
     private fun showCategories() {
         viewModelScope.launch {
             flowOf(sheetdata?.categories ?: emptyList())
+                .map { list -> list.sortedBy { it.categoryTitle } }
                 .flowOn(Dispatchers.IO)
                 .catch { handleError(it) }
                 .collect {
@@ -71,7 +75,32 @@ class HomeViewModel(
                 .onCompletion { loading.value = false }
                 .catch { handleError(it) }
                 .collect {
-                    cell.value = it
+                    carrentPayment = it
+                    cell.value = it.value ?: ""
+                }
+        }
+    }
+
+    fun writeValue(paymentCategory: PaymentCategory?, month: String, value: String?) {
+        viewModelScope.launch {
+            flow {
+                emit(sheetsRepository.writeValue(link ?: "", paymentCategory, month, value))
+            }
+                .flowOn(Dispatchers.IO)
+                .onStart { loading.value = true }
+                .onCompletion { loading.value = false }
+                .catch { handleError(it) }
+                .collect { save ->
+                    if (save) {
+                        toast.value = "Значение сохранено"
+                        if (!link.isNullOrBlank()) {
+                            link?.let { startReadingSpreadsheet(it) }
+                        } else {
+                            toast.value = "Пустая ссылка на документ"
+                        }
+                    } else {
+                        toast.value = "Значение не сохранено"
+                    }
                 }
         }
     }

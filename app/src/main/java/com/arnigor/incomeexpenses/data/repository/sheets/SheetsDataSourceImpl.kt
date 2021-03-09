@@ -7,6 +7,8 @@ import com.google.api.client.json.jackson2.JacksonFactory
 import com.google.api.services.sheets.v4.Sheets
 import com.google.api.services.sheets.v4.model.SheetProperties
 import com.google.api.services.sheets.v4.model.Spreadsheet
+import com.google.api.services.sheets.v4.model.UpdateValuesResponse
+import com.google.api.services.sheets.v4.model.ValueRange
 import javax.inject.Inject
 
 class SheetsDataSourceImpl @Inject constructor() : SheetsDataSource {
@@ -36,7 +38,7 @@ class SheetsDataSourceImpl @Inject constructor() : SheetsDataSource {
                 if (valueRenderOption.isNullOrBlank().not()) {
                     setValueRenderOption(valueRenderOption)
                 }
-            }.execute().getValues() as List<List<Any>>
+            }.execute().getValues() ?: return listOf(listOf())
     }
 
     private fun sheetsApi(): Sheets {
@@ -48,6 +50,22 @@ class SheetsDataSourceImpl @Inject constructor() : SheetsDataSource {
     override suspend fun readSpreadSheetData(spreadsheetId: String): SheetProperties? {
         val execute = sheetsApi().spreadsheets().get(spreadsheetId).execute()
         return execute.sheets[0].properties
+    }
+
+    override suspend fun writeValue(
+        spreadsheetId: String,
+        range: String,
+        cellValue: String?
+    ): Boolean {
+        val values: List<List<Any>> = listOf(listOf(cellValue ?: ""))
+        val body: ValueRange = ValueRange()
+            .setValues(values)
+        val result: UpdateValuesResponse =
+            sheetsApi().spreadsheets().values()
+                .update(spreadsheetId, range, body)
+                .setValueInputOption("USER_ENTERED")
+                .execute()
+        return result.updatedCells != 0
     }
 
     override suspend fun createSpreadsheet(spreadSheet: Spreadsheet): SpreadsheetInfo {
