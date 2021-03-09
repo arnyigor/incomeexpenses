@@ -30,6 +30,7 @@ class HomeViewModel(
     val toast = mutableLiveData<String>(null)
     val title = mutableLiveData<String>(null)
     val data = mutableLiveData<String>(null)
+    val currentMonth = mutableLiveData<String>(null)
     val cell = mutableLiveData<String>(null)
     val hasDocLink = mutableLiveData(false)
     val categories = mutableLiveData<List<PaymentCategory>>()
@@ -37,27 +38,24 @@ class HomeViewModel(
 
     private fun startReadingSpreadsheet(link: String) {
         viewModelScope.launch {
+            loading.value = true
             flow { emit(sheetsRepository.readSpreadSheet(link)) }
                 .flowOn(Dispatchers.IO)
-                .onStart { loading.value = true }
-                .onCompletion { loading.value = false }
                 .catch { handleError(it) }
                 .collect {
                     sheetdata = it
                     getSelectedMonthData()
                     showCategories()
+                    loading.value = false
                 }
         }
     }
-
 
     fun loadDocTitle() {
         if (docLink.isNullOrBlank().not()) {
             viewModelScope.launch {
                 flow { emit(sheetsRepository.readSpreadSheetData(docLink ?: "")) }
                     .flowOn(Dispatchers.IO)
-                    .onStart { loading.value = true }
-                    .onCompletion { loading.value = false }
                     .catch { handleError(it) }
                     .collect {
                         title.value = it?.properties?.title
@@ -78,7 +76,7 @@ class HomeViewModel(
         }
     }
 
-    private fun getSheetDataByMonth(monthName: String? = null): String {
+    private fun getSheetDataByMonth(monthName: String? = null): Pair<String, String> {
         val month = monthName ?: DateTimeUtils.getCurrentMonthRuFull()
         val sb = StringBuilder().apply {
             val md =
@@ -101,10 +99,11 @@ class HomeViewModel(
             append("Траты:$totalOutcome\n")
             append("Остаток:${totalIncome - totalOutcome}\n")
         }
-        return "Месяц:$month,Итого:\n$sb"
+        return month to sb.toString()
     }
 
     private fun handleError(mLastError: Throwable?) {
+        loading.value = false
         mLastError?.printStackTrace()
         when (mLastError) {
             is GooglePlayServicesAvailabilityIOException -> {
@@ -168,11 +167,11 @@ class HomeViewModel(
         viewModelScope.launch {
             flow { emit(getSheetDataByMonth(monthName)) }
                 .flowOn(Dispatchers.IO)
-                .onStart { loading.value = true }
-                .onCompletion { loading.value = false }
                 .catch { handleError(it) }
-                .collect {
-                    data.value = it
+                .collect { (month, value) ->
+                    currentMonth.value = month[0].toUpperCase() +
+                            month.substring(1).toLowerCase(Locale.getDefault())
+                    data.value = value
                 }
         }
     }

@@ -5,14 +5,13 @@ import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Bundle
-import android.text.Editable
-import android.text.SpannableStringBuilder
 import android.util.Log
 import android.view.View
 import android.widget.AdapterView
+import android.widget.ArrayAdapter
+import android.widget.EditText
 import android.widget.Toast
 import androidx.core.view.isVisible
-import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
 import androidx.navigation.findNavController
 import androidx.preference.PreferenceManager
@@ -98,13 +97,6 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
                 tiedtCellData.setText("$toString+")
             }
             tiedtCellData.setSelection(toString.length + 1)
-        }
-        tiedtCellData.doAfterTextChanged {
-            val toString = it.toString()
-            if (toString.contains(".")) {
-                val ab: Editable = SpannableStringBuilder(toString.replace(".", ","))
-                it?.replace(0, it.length, ab)
-            }
         }
         categoriesAdapter = CategoriesAdapter(requireContext())
         spinCategories.adapter = categoriesAdapter
@@ -215,6 +207,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         uiListeners()
         homeViewModel.updateDocLink()
         homeViewModel.loadDocTitle()
+        homeViewModel.readSpreadsheet()
     }
 
     override fun onResume() {
@@ -227,6 +220,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         mBtnSign.setOnClickListener {
             btnSingnInClick()
         }
+        spinMonths.setSelection(0, false)
         spinMonths.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(
                 parent: AdapterView<*>?,
@@ -308,7 +302,10 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             categoriesAdapter?.notifyDataSetChanged()
         })
         homeViewModel.cell.observe(viewLifecycleOwner, { cell ->
-            binding.tiedtCellData.setText(cell)
+            with(binding) {
+                tiedtCellData.setText(cell)
+                tiedtCellData.focus()
+            }
         })
         homeViewModel.hasDocLink.observe(viewLifecycleOwner, { hasLink ->
             this.hasLink = hasLink
@@ -317,6 +314,15 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             binding.tvDocTitle.isVisible = title.isNullOrBlank().not()
             binding.tvDocTitle.text = title
         })
+        homeViewModel.currentMonth.observe(viewLifecycleOwner, { month ->
+            val adapter = binding.spinMonths.adapter as ArrayAdapter<String>
+            binding.spinMonths.setSelection(adapter.getPosition(month))
+        })
+    }
+
+    private fun EditText.focus(){
+        requestFocus()
+        setSelection(length())
     }
 
     private fun updateSignIn() {
