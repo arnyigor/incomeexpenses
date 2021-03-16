@@ -85,6 +85,12 @@ ext {
         implementation("com.google.apis:google-api-services-sheets:$version")
     }}
 
+    googleDrive = { version = 'v3-rev69-1.22.0' -> Alias {
+        implementation("com.google.apis:google-api-services-drive:$version") {
+            exclude group: 'org.apache.httpcomponents'
+        }
+    }}
+
     googleAuth = { version = '19.0.0' -> Alias {
         implementation "com.google.android.gms:play-services-auth:$version"
     }}

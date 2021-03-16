@@ -4,6 +4,7 @@ import com.arnigor.incomeexpenses.data.model.SpreadsheetInfo
 import com.google.api.client.extensions.android.http.AndroidHttp
 import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential
 import com.google.api.client.json.jackson2.JacksonFactory
+import com.google.api.services.drive.Drive
 import com.google.api.services.sheets.v4.Sheets
 import com.google.api.services.sheets.v4.model.Spreadsheet
 import com.google.api.services.sheets.v4.model.UpdateValuesResponse
@@ -12,6 +13,7 @@ import javax.inject.Inject
 
 class SheetsDataSourceImpl @Inject constructor() : SheetsDataSource {
     private var sheetsAPI: Sheets? = null
+    private var driveApi: Drive? = null
 
     override fun initApi(googleAccountCredential: GoogleAccountCredential?) {
         sheetsAPI = Sheets.Builder(
@@ -20,6 +22,13 @@ class SheetsDataSourceImpl @Inject constructor() : SheetsDataSource {
             googleAccountCredential
         )
             .setApplicationName("Google Sheets API Android Quickstart")
+            .build()
+        driveApi = Drive.Builder(
+            AndroidHttp.newCompatibleTransport(),
+            JacksonFactory.getDefaultInstance(),
+            googleAccountCredential
+        )
+            .setApplicationName("My Application Name")
             .build()
     }
 
@@ -47,7 +56,11 @@ class SheetsDataSourceImpl @Inject constructor() : SheetsDataSource {
     }
 
     override suspend fun readSpreadSheetData(spreadsheetId: String): Spreadsheet? {
-        return sheetsApi().spreadsheets().get(spreadsheetId).execute()
+        val modifiedTime = driveApi?.files()
+            ?.get(spreadsheetId)
+            ?.setFields("id, modifiedTime")
+            ?.execute()?.modifiedTime
+        return sheetsApi().spreadsheets()[spreadsheetId].execute()
     }
 
     override suspend fun writeValue(

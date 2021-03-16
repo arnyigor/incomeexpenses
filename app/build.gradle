@@ -24,6 +24,7 @@ dependencies {
     googleAuth()
     googleApiClient()
     googleSheets()
+    googleDrive()
     jodaTime()
     androidTest()
     unitTest()
