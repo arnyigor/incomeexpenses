@@ -56,10 +56,12 @@ class SheetsDataSourceImpl @Inject constructor() : SheetsDataSource {
     }
 
     override suspend fun readSpreadSheetData(spreadsheetId: String): Spreadsheet? {
-        val modifiedTime = driveApi?.files()
+        val execute = driveApi?.files()
             ?.get(spreadsheetId)
-            ?.setFields("id, modifiedTime")
-            ?.execute()?.modifiedTime
+            ?.setFields("id, modifiedTime, createdTime")
+            ?.execute()
+        val modifiedTime = execute?.modifiedTime
+        val createdTime = execute?.createdTime
         return sheetsApi().spreadsheets()[spreadsheetId].execute()
     }
 
