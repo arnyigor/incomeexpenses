@@ -3,17 +3,18 @@ package com.arnigor.incomeexpenses.presentation.home
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.arnigor.incomeexpenses.R
+import com.arnigor.incomeexpenses.data.model.SpreadsheetModifiedData
 import com.arnigor.incomeexpenses.data.repository.prefs.PreferencesDataSource
 import com.arnigor.incomeexpenses.data.repository.sheets.SheetsRepository
-import com.arnigor.incomeexpenses.presentation.models.PaymentCategory
-import com.arnigor.incomeexpenses.presentation.models.PaymentData
-import com.arnigor.incomeexpenses.presentation.models.PaymentType
-import com.arnigor.incomeexpenses.presentation.models.SpreadSheetData
+import com.arnigor.incomeexpenses.presentation.models.*
 import com.arnigor.incomeexpenses.utils.DateTimeUtils
+import com.arnigor.incomeexpenses.utils.ResourceString
+import com.arnigor.incomeexpenses.utils.SimpleString
 import com.arnigor.incomeexpenses.utils.mutableLiveData
 import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential
 import com.google.api.client.googleapis.extensions.android.gms.auth.GooglePlayServicesAvailabilityIOException
 import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException
+import com.google.api.services.sheets.v4.model.Spreadsheet
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -29,12 +30,13 @@ class HomeViewModel(
     private var carrentPayment: PaymentData? = null
     val toast = mutableLiveData<String>(null)
     val title = mutableLiveData<String>(null)
-    val data = mutableLiveData<String>(null)
+    val categoriesData = mutableLiveData<List<AdapterCategoryModel>>(emptyList())
     val currentMonth = mutableLiveData<String>(null)
     val cell = mutableLiveData<String>(null)
     val hasDocLink = mutableLiveData(false)
     val categories = mutableLiveData<List<PaymentCategory>>()
     val loading = mutableLiveData(false)
+    val modifiedData = mutableLiveData<SpreadsheetModifiedData>()
 
     private fun startReadingSpreadsheet(link: String) {
         viewModelScope.launch {
@@ -54,11 +56,39 @@ class HomeViewModel(
     fun loadDocTitle() {
         if (docLink.isNullOrBlank().not()) {
             viewModelScope.launch {
-                flow { emit(sheetsRepository.readSpreadSheetData(docLink ?: "")) }
+                flow {
+                    emit(
+                        sheetsRepository.readSpreadSheetData(
+                            docLink
+                                ?: ""
+                        )
+                    )
+                }.zip(flow {
+                    emit(
+                        sheetsRepository.getModifiedData(
+                            docLink ?: ""
+                        )
+                    )
+                }) { spreadsheet: Spreadsheet?, spreadsheetModifiedData: SpreadsheetModifiedData ->
+                    spreadsheet to spreadsheetModifiedData
+                }
+                    .map { (sheet, data) ->
+                        StringBuilder().apply {
+                            append("Файл: ").append(sheet?.properties?.title).append("\n")
+                            append("Создан: ").append(data.createdTime).append("\n")
+                            append("Изменён: ").append(data.modifiedTime)
+                            if (data.duration != null) {
+                                append("(")
+                                append(data.duration)
+                                append(" мин. назад)")
+                            }
+                            append("\n")
+                        }.toString()
+                    }
                     .flowOn(Dispatchers.IO)
                     .catch { handleError(it) }
                     .collect {
-                        title.value = it?.properties?.title
+                        title.value = it
                     }
             }
         }
@@ -76,30 +106,65 @@ class HomeViewModel(
         }
     }
 
-    private fun getSheetDataByMonth(monthName: String? = null): Pair<String, String> {
+    private fun getSheetDataByMonth(monthName: String? = null): Pair<String, List<AdapterCategoryModel>> {
         val month = monthName ?: DateTimeUtils.getCurrentMonthRuFull()
-        val sb = StringBuilder().apply {
-            val md =
-                sheetdata?.monthsData?.find { month.toUpperCase(Locale.getDefault()) == it.monthName }
+        val list = mutableListOf<AdapterCategoryModel>().apply {
             var totalIncome = BigDecimal.ZERO
             var totalOutcome = BigDecimal.ZERO
-            md?.payments?.let { payments ->
-                for (payment in payments) {
-                    val value = payment.value ?: BigDecimal.ZERO
-                    val paymentCategory = payment.paymentCategory
-                    if (paymentCategory?.paymentType == PaymentType.INCOME) {
-                        totalIncome += value
-                    } else {
-                        totalOutcome += value
+            sheetdata?.monthsData?.find { month.toUpperCase(Locale.getDefault()) == it.monthName }
+                ?.payments?.let { payments ->
+                    for (payment in sortPayments(payments)) {
+                        val value = payment.value ?: BigDecimal.ZERO
+                        val paymentCategory = payment.paymentCategory
+                        if (paymentCategory?.paymentType == PaymentType.INCOME) {
+                            totalIncome += value
+                        } else {
+                            totalOutcome += value
+                        }
+                        add(
+                            AdapterCategoryModel(
+                                SimpleString(paymentCategory?.categoryTitle),
+                                value,
+                                paymentCategory?.paymentType
+                            )
+                        )
                     }
-                    append("Категория:${paymentCategory?.categoryTitle} сумма:$value\n")
                 }
-            }
-            append("Входящие:$totalIncome\n")
-            append("Траты:$totalOutcome\n")
-            append("Остаток:${totalIncome - totalOutcome}\n")
+            add(
+                AdapterCategoryModel(
+                    ResourceString(R.string.income),
+                    totalIncome,
+                    PaymentType.INCOME_SUM
+                )
+            )
+            add(
+                AdapterCategoryModel(
+                    ResourceString(R.string.outcome),
+                    totalOutcome,
+                    PaymentType.OUTCOME_SUM
+                )
+            )
+            add(
+                AdapterCategoryModel(
+                    ResourceString(R.string.balance),
+                    totalIncome - totalOutcome,
+                    PaymentType.BALANCE
+                )
+            )
         }
-        return month to sb.toString()
+        return month to list
+    }
+
+    private fun sortPayments(payments: List<Payment>): List<Payment> {
+        return payments.sortedBy { it.paymentCategory?.categoryTitle }.sortedWith { p1, p2 ->
+            val paymentType1 = p1.paymentCategory?.paymentType
+            val paymentType2 = p2.paymentCategory?.paymentType
+            when {
+                paymentType1 == PaymentType.INCOME && paymentType2 == PaymentType.OUTCOME -> 1
+                paymentType1 == PaymentType.OUTCOME && paymentType2 == PaymentType.INCOME -> -1
+                else -> 0
+            }
+        }
     }
 
     private fun handleError(mLastError: Throwable?) {
@@ -171,7 +236,7 @@ class HomeViewModel(
                 .collect { (month, value) ->
                     currentMonth.value = month[0].toUpperCase() +
                             month.substring(1).toLowerCase(Locale.getDefault())
-                    data.value = value
+                    categoriesData.value = value
                 }
         }
     }

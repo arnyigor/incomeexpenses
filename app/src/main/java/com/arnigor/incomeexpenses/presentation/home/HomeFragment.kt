@@ -11,15 +11,19 @@ import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.EditText
 import android.widget.Toast
+import androidx.annotation.DrawableRes
+import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.navigation.findNavController
 import androidx.preference.PreferenceManager
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.arnigor.incomeexpenses.R
 import com.arnigor.incomeexpenses.databinding.FragmentHomeBinding
 import com.arnigor.incomeexpenses.presentation.MainActivity
 import com.arnigor.incomeexpenses.presentation.main.HeaderDataChangedListener
 import com.arnigor.incomeexpenses.presentation.models.PaymentCategory
+import com.arnigor.incomeexpenses.utils.toDrawable
 import com.arnigor.incomeexpenses.utils.viewBinding
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
@@ -44,6 +48,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
     private var sharedPreferences: SharedPreferences? = null
     private var googleAccountCredential: GoogleAccountCredential? = null
     private var categoriesAdapter: CategoriesAdapter? = null
+    private var categoriesDataAdapter: CategoriesDataAdapter? = null
     private var edtState by Delegates.observable(true) { _, _, editState ->
         binding.tilCellData.isVisible = !editState
         if (editState) {
@@ -54,34 +59,37 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
     }
     private var signedIn by Delegates.observable(false) { _, _, logined ->
         binding.mBtnGetData.isVisible = logined
-        binding.tvData.isVisible = hasLink && logined
+        binding.rvCategories.isVisible = hasLink && logined
         binding.spinMonths.isVisible = hasLink && logined
         binding.tvDocTitle.isVisible = hasLink && logined
         binding.tilCellData.isVisible = hasLink && logined
         binding.spinCategories.isVisible = hasLink && logined
         binding.btnEdt.isVisible = hasLink && logined
         binding.tvCategoriesCaption.isVisible = hasLink && logined
-        binding.mBtnSign.text = getString(
-            if (logined) {
-                R.string.sign_out
-            } else {
-                R.string.sign_in
-            }
+        @DrawableRes
+        val icon = if (logined) {
+            R.drawable.ic_logout
+        } else {
+            R.drawable.ic_login
+        }
+        binding.mBtnSign.setImageDrawable(
+            ContextCompat.getDrawable(
+                requireContext(),
+                icon
+            )
         )
     }
 
     private var hasLink by Delegates.observable(false) { _, _, hasLink ->
-        binding.tvData.isVisible = hasLink
+        binding.rvCategories.isVisible = hasLink
         binding.spinMonths.isVisible = hasLink
         binding.tilCellData.isVisible = hasLink
         binding.spinCategories.isVisible = hasLink
         binding.btnEdt.isVisible = hasLink
         binding.tvCategoriesCaption.isVisible = hasLink
-        if (hasLink) {
-            binding.mBtnGetData.text = getString(R.string.get_data)
-        } else {
-            binding.mBtnGetData.text = getString(R.string.to_settings)
-        }
+        @DrawableRes
+        val icon = if (hasLink) R.drawable.ic_refresh else R.drawable.ic_insert_link
+        binding.mBtnGetData.setImageDrawable(icon.toDrawable(requireContext()))
     }
 
     private val binding by viewBinding { FragmentHomeBinding.bind(it).also(::initBinding) }
@@ -100,6 +108,15 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         }
         categoriesAdapter = CategoriesAdapter(requireContext())
         spinCategories.adapter = categoriesAdapter
+        categoriesDataAdapter = CategoriesDataAdapter()
+        rvCategories.apply {
+            layoutManager = object : LinearLayoutManager(requireContext()) {
+                override fun canScrollVertically(): Boolean {
+                    return false
+                }
+            }
+            adapter = categoriesDataAdapter
+        }
     }
 
     private fun getCategoriesAndMonths(): Pair<PaymentCategory?, String> {
@@ -280,8 +297,11 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         homeViewModel.toast.observe(viewLifecycleOwner, {
             Toast.makeText(requireContext(), it, Toast.LENGTH_LONG).show()
         })
-        homeViewModel.data.observe(viewLifecycleOwner, {
-            binding.tvData.text = it
+        homeViewModel.categoriesData.observe(viewLifecycleOwner, { data ->
+            if (categoriesDataAdapter?.currentList?.isEmpty() == false) {
+                categoriesDataAdapter?.submitList(emptyList())
+            }
+            categoriesDataAdapter?.submitList(data)
             binding.spinCategories.isVisible = true
             binding.btnEdt.isVisible = true
             binding.tvCategoriesCaption.isVisible = true
@@ -318,9 +338,12 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             val adapter = binding.spinMonths.adapter as ArrayAdapter<String>
             binding.spinMonths.setSelection(adapter.getPosition(month))
         })
+        homeViewModel.modifiedData.observe(viewLifecycleOwner, { data ->
+            binding.spinMonths
+        })
     }
 
-    private fun EditText.focus(){
+    private fun EditText.focus() {
         requestFocus()
         setSelection(length())
     }

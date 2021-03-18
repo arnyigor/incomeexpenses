@@ -4,7 +4,7 @@ import java.math.BigDecimal
 
 data class SpreadSheetData(
     val categories: List<PaymentCategory>,
-    val monthsData: List<MonthData>
+    val monthsData: List<MonthData>,
 )
 
 data class MonthData(
@@ -29,5 +29,5 @@ data class PaymentCategory(
 )
 
 enum class PaymentType {
-    INCOME, OUTCOME
+    INCOME, OUTCOME, INCOME_SUM, OUTCOME_SUM, BALANCE
 }

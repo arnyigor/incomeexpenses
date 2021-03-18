@@ -1,6 +1,6 @@
 package com.arnigor.incomeexpenses.data.repository.sheets
 
-import com.arnigor.incomeexpenses.data.model.SpreadsheetInfo
+import com.arnigor.incomeexpenses.data.model.SpreadsheetModifiedData
 import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential
 import com.google.api.services.sheets.v4.model.Spreadsheet
 
@@ -19,9 +19,7 @@ interface SheetsDataSource {
     ): List<List<Any>>
 
     fun initApi(googleAccountCredential: GoogleAccountCredential?)
-
     suspend fun readSpreadSheetData(spreadsheetId: String): Spreadsheet?
-    suspend fun createSpreadsheet(spreadSheet: Spreadsheet): SpreadsheetInfo
-
     suspend fun writeValue(spreadsheetId: String, range: String, cellValue: String?): Boolean
+    suspend fun getModifiedData(spreadsheetId: String): SpreadsheetModifiedData
 }

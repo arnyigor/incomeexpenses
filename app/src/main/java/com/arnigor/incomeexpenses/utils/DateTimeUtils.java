@@ -247,23 +247,23 @@ public class DateTimeUtils {
     };
 
     public static long durationInMinutes(long start, long end) {
-        Duration duration = new Duration(start, end);
-        return duration.getStandardMinutes();
+        return new Duration(start, end).getStandardMinutes();
+    }
+
+    public static long durationInSeconds(long start, long end) {
+        return new Duration(start, end).getStandardSeconds();
     }
 
     public static long plusMonth(Calendar calendar, int months) {
-        DateTime start = getJodaDateTime(calendar);
-        return start.plusMonths(months).getMillis();
+        return getJodaDateTime(calendar).plusMonths(months).getMillis();
     }
 
     public static long plusDay(Calendar calendar, int days) {
-        DateTime start = getJodaDateTime(calendar);
-        return start.plusDays(days).getMillis();
+        return getJodaDateTime(calendar).plusDays(days).getMillis();
     }
 
     public static long plusYears(Calendar calendar, int years) {
-        DateTime start = getJodaDateTime(calendar);
-        return start.plusYears(years).getMillis();
+        return getJodaDateTime(calendar).plusYears(years).getMillis();
     }
 
     public static DateTime getJodaDateTime(Calendar calendar) {

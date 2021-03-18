@@ -1,5 +1,6 @@
 package com.arnigor.incomeexpenses.data.repository.sheets
 
+import com.arnigor.incomeexpenses.data.model.SpreadsheetModifiedData
 import com.arnigor.incomeexpenses.data.repository.sheets.utils.getColumnNameFromColumnPosition
 import com.arnigor.incomeexpenses.data.repository.sheets.utils.getSpeadsheetIdFromLink
 import com.arnigor.incomeexpenses.presentation.models.*
@@ -25,8 +26,12 @@ class SheetsRepositoryImpl @Inject constructor(private val sheetsAPIDataSource: 
 
     override suspend fun readSpreadSheetData(link: String): Spreadsheet? {
         val spreadsheetId = getSpeadsheetIdFromLink(link)
-        val readSpreadSheetData = sheetsAPIDataSource.readSpreadSheetData(spreadsheetId)
-        return readSpreadSheetData
+        return sheetsAPIDataSource.readSpreadSheetData(spreadsheetId)
+    }
+
+    override suspend fun getModifiedData(link: String): SpreadsheetModifiedData {
+        val spreadsheetId = getSpeadsheetIdFromLink(link)
+        return sheetsAPIDataSource.getModifiedData(spreadsheetId)
     }
 
     override suspend fun writeValue(
@@ -51,8 +56,15 @@ class SheetsRepositoryImpl @Inject constructor(private val sheetsAPIDataSource: 
             majorDimension = "COLUMNS",
             valueRenderOption = "FORMULA"
         )
-        val cellvalue = values.flatten().getOrNull(0).toString()
-        return PaymentData(cellvalue, range)
+        val value = values.flatten().getOrNull(0)?.let { value ->
+            val cellValue = value.toString()
+            if (cellValue.startsWith("=").not()) {
+                "=${cellValue}"
+            } else {
+                cellValue
+            }
+        } ?: "="
+        return PaymentData(value, range)
     }
 
     private suspend fun getSheetData(

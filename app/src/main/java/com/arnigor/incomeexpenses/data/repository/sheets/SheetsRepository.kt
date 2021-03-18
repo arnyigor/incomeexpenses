@@ -1,5 +1,6 @@
 package com.arnigor.incomeexpenses.data.repository.sheets
 
+import com.arnigor.incomeexpenses.data.model.SpreadsheetModifiedData
 import com.arnigor.incomeexpenses.presentation.models.PaymentCategory
 import com.arnigor.incomeexpenses.presentation.models.PaymentData
 import com.arnigor.incomeexpenses.presentation.models.SpreadSheetData
@@ -22,4 +23,6 @@ interface SheetsRepository {
         month: String,
         cellValue: String?
     ): Boolean
+
+    suspend fun getModifiedData(link: String): SpreadsheetModifiedData
 }

@@ -11,38 +11,62 @@
         android:layout_height="wrap_content"
         android:padding="8dp">
 
-        <com.google.android.material.button.MaterialButton
+        <ImageButton
             android:id="@+id/mBtnSign"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/sign_in"
+            android:backgroundTint="@color/purple_500"
+            android:contentDescription="@null"
+            android:src="@drawable/ic_login"
+            android:tint="@color/white"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
-        <com.google.android.material.button.MaterialButton
+        <ImageButton
             android:id="@+id/mBtnGetData"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:text="@string/get_data"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/mBtnSign"
-            tools:text="@string/to_settings" />
+            android:layout_marginEnd="8dp"
+            android:backgroundTint="@color/purple_500"
+            android:contentDescription="@null"
+            android:src="@drawable/ic_refresh"
+            android:tint="@color/white"
+            app:layout_constraintEnd_toStartOf="@+id/mBtnSign"
+            app:layout_constraintTop_toTopOf="parent" />
 
         <TextView
             android:id="@+id/tvDocTitle"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
+            android:layout_marginEnd="8dp"
             android:textSize="18sp"
             android:visibility="gone"
-            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/mBtnGetData"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/mBtnGetData"
+            app:layout_constraintTop_toTopOf="parent"
             tools:text="Название документа"
             tools:visibility="visible" />
+
+        <androidx.constraintlayout.widget.Barrier
+            android:id="@+id/barierTop"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:barrierDirection="bottom"
+            app:constraint_referenced_ids="tvDocTitle,mBtnGetData,mBtnSign"
+            tools:layout_editor_absoluteX="8dp"
+            tools:layout_editor_absoluteY="8dp" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvCategories"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/spinMonths"
+            tools:itemCount="3"
+            tools:listitem="@layout/item_category_sum" />
 
         <ProgressBar
             android:id="@+id/progressBar"
@@ -52,44 +76,32 @@
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
-
-        <TextView
-            android:id="@+id/tvData"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:textSize="18sp"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/spinMonths"
-            tools:text="Данные" />
+            app:layout_constraintTop_toTopOf="parent"
+            tools:visibility="visible" />
 
         <Spinner
             android:id="@+id/spinMonths"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
             android:entries="@array/monthes"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/tvDocTitle" />
+            app:layout_constraintTop_toBottomOf="@+id/barierTop" />
 
         <TextView
             android:id="@+id/tvCategoriesCaption"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/margin"
+            android:layout_marginTop="8dp"
             android:text="@string/categories"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/tvData" />
+            app:layout_constraintTop_toBottomOf="@+id/rvCategories" />
 
         <Spinner
             android:id="@+id/spinCategories"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/margin"
             android:visibility="gone"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
