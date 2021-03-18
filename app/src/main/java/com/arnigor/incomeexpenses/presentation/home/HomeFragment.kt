@@ -11,6 +11,7 @@ import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.EditText
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.DrawableRes
 import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
@@ -23,6 +24,7 @@ import com.arnigor.incomeexpenses.databinding.FragmentHomeBinding
 import com.arnigor.incomeexpenses.presentation.MainActivity
 import com.arnigor.incomeexpenses.presentation.main.HeaderDataChangedListener
 import com.arnigor.incomeexpenses.presentation.models.PaymentCategory
+import com.arnigor.incomeexpenses.utils.alertDialog
 import com.arnigor.incomeexpenses.utils.toDrawable
 import com.arnigor.incomeexpenses.utils.viewBinding
 import com.google.android.gms.auth.api.signin.GoogleSignIn
@@ -92,6 +94,11 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         binding.mBtnGetData.setImageDrawable(icon.toDrawable(requireContext()))
     }
 
+    private val getResult =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+            handleActivityResult(it.data)
+        }
+
     private val binding by viewBinding { FragmentHomeBinding.bind(it).also(::initBinding) }
 
     @Inject
@@ -129,21 +136,27 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
 
     private fun btnSingnInClick() {
         if (signedIn) {
-            getGoogleClient()?.signOut()?.addOnCompleteListener {
-                signedIn = false
-                hasLink = false
-                headerDataChangedListener?.headerDataChanged(null, null)
-                updatePrefs(
-                    MainActivity.PREF_KEY_USER_EMAIl to null,
-                    MainActivity.PREF_KEY_USER_NAME to null,
-                    getString(R.string.preference_key_doc_link) to ""
-                )
-            }
+            alertDialog(
+                getString(R.string.logout),
+                onConfirm = {
+                    getGoogleClient()?.signOut()?.addOnCompleteListener {
+                        signedIn = false
+                        hasLink = false
+                        headerDataChangedListener?.headerDataChanged(null, null)
+                        updatePrefs(
+                            MainActivity.PREF_KEY_USER_EMAIl to null,
+                            MainActivity.PREF_KEY_USER_NAME to null,
+                            getString(R.string.preference_key_doc_link) to ""
+                        )
+                    }
+                },
+                btnCancelText = getString(android.R.string.cancel),
+                onCancel = {},
+                cancelable = true
+            )
         } else {
-            startActivityForResult(getGoogleClient()?.signInIntent, RQ_GOOGLE_SIGN_IN)
-//            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-//                handleActivityResult(result.data)
-//            }.launch(getGoogleClient()?.signInIntent)
+            getResult.launch(getGoogleClient()?.signInIntent)
+//            startActivityForResult(getGoogleClient()?.signInIntent, RQ_GOOGLE_SIGN_IN)
         }
     }
 

@@ -75,7 +75,6 @@ class HomeViewModel(
                     .map { (sheet, data) ->
                         StringBuilder().apply {
                             append("Файл: ").append(sheet?.properties?.title).append("\n")
-                            append("Создан: ").append(data.createdTime).append("\n")
                             append("Изменён: ").append(data.modifiedTime)
                             if (data.duration != null) {
                                 append("(")

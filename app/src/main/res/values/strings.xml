@@ -39,4 +39,5 @@
     <string name="income">Входящие</string>
     <string name="outcome">Траты</string>
     <string name="balance">Остаток</string>
+    <string name="logout">Выйти из аккаунта?</string>
 </resources>

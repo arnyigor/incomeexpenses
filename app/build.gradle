@@ -17,6 +17,7 @@ dependencies {
     preference()
     material()
     constraintlayout()
+    materialDialog()
     lifecycle()
     rxjava2()
     navigation()
