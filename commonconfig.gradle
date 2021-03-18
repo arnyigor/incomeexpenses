@@ -36,6 +36,13 @@ android {
     }
 
     packagingOptions {
+        exclude 'META-INF/DEPENDENCIES'
+        exclude 'META-INF/ASL2.0'
+        exclude 'META-INF/LICENSE'
+        exclude 'META-INF/NOTICE'
+        exclude 'META-INF/NOTICE.txt'
+        exclude 'META-INF/LICENSE.txt'
+        exclude 'META-INF/MANIFEST.MF'
     }
 
     sourceSets {
@@ -67,8 +74,6 @@ android {
         }
 
         debug {
-            applicationIdSuffix '.debug'
-            versionNameSuffix '-DEBUG'
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             testCoverageEnabled = true

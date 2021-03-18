@@ -20,7 +20,6 @@ import dagger.android.DispatchingAndroidInjector
 import dagger.android.HasAndroidInjector
 import javax.inject.Inject
 
-
 class MainActivity : AppCompatActivity(), HasAndroidInjector, HeaderDataChangedListener {
     companion object {
         const val PREF_KEY_USER_NAME = "pref_key_user_name"

@@ -35,7 +35,7 @@
             app:layout_constraintTop_toTopOf="parent" />
 
         <TextView
-            android:id="@+id/tvDocTitle"
+            android:id="@+id/tvFileData"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
@@ -45,7 +45,7 @@
             app:layout_constraintEnd_toStartOf="@+id/mBtnGetData"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            tools:text="Название документа"
+            tools:text="Данные документа"
             tools:visibility="visible" />
 
         <androidx.constraintlayout.widget.Barrier
@@ -53,7 +53,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             app:barrierDirection="bottom"
-            app:constraint_referenced_ids="tvDocTitle,mBtnGetData,mBtnSign"
+            app:constraint_referenced_ids="tvFileData,mBtnGetData,mBtnSign"
             tools:layout_editor_absoluteX="8dp"
             tools:layout_editor_absoluteY="8dp" />
 

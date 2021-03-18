@@ -13,6 +13,7 @@ import android.widget.EditText
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.DrawableRes
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
@@ -63,7 +64,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         binding.mBtnGetData.isVisible = logined
         binding.rvCategories.isVisible = hasLink && logined
         binding.spinMonths.isVisible = hasLink && logined
-        binding.tvDocTitle.isVisible = hasLink && logined
+        binding.tvFileData.isVisible = hasLink && logined
         binding.tilCellData.isVisible = hasLink && logined
         binding.spinCategories.isVisible = hasLink && logined
         binding.btnEdt.isVisible = hasLink && logined
@@ -230,6 +231,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        updateTitle(getString(R.string.app_name))
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(requireContext())
         initCredential()
         updateSignIn()
@@ -343,9 +345,13 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         homeViewModel.hasDocLink.observe(viewLifecycleOwner, { hasLink ->
             this.hasLink = hasLink
         })
+        homeViewModel.fileData.observe(viewLifecycleOwner, { data ->
+            binding.tvFileData.isVisible = data.isNullOrBlank().not()
+            binding.tvFileData.text = data
+            binding.tvFileData.text = data
+        })
         homeViewModel.title.observe(viewLifecycleOwner, { title ->
-            binding.tvDocTitle.isVisible = title.isNullOrBlank().not()
-            binding.tvDocTitle.text = title
+            updateTitle(title)
         })
         homeViewModel.currentMonth.observe(viewLifecycleOwner, { month ->
             val adapter = binding.spinMonths.adapter as ArrayAdapter<String>
@@ -354,6 +360,10 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         homeViewModel.modifiedData.observe(viewLifecycleOwner, { data ->
             binding.spinMonths
         })
+    }
+
+    private fun updateTitle(title: String?) {
+        (requireActivity() as AppCompatActivity).supportActionBar?.title = title
     }
 
     private fun EditText.focus() {

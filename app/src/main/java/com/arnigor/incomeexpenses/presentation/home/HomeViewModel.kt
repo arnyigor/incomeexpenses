@@ -30,6 +30,7 @@ class HomeViewModel(
     private var carrentPayment: PaymentData? = null
     val toast = mutableLiveData<String>(null)
     val title = mutableLiveData<String>(null)
+    val fileData = mutableLiveData<String>(null)
     val categoriesData = mutableLiveData<List<AdapterCategoryModel>>(emptyList())
     val currentMonth = mutableLiveData<String>(null)
     val cell = mutableLiveData<String>(null)
@@ -73,8 +74,7 @@ class HomeViewModel(
                     spreadsheet to spreadsheetModifiedData
                 }
                     .map { (sheet, data) ->
-                        StringBuilder().apply {
-                            append("Файл: ").append(sheet?.properties?.title).append("\n")
+                        ("Документ: ${sheet?.properties?.title}") to StringBuilder().apply {
                             append("Изменён: ").append(data.modifiedTime)
                             if (data.duration != null) {
                                 append("(")
@@ -86,8 +86,9 @@ class HomeViewModel(
                     }
                     .flowOn(Dispatchers.IO)
                     .catch { handleError(it) }
-                    .collect {
-                        title.value = it
+                    .collect { (titleVal, data) ->
+                        title.value = titleVal
+                        fileData.value = data
                     }
             }
         }
