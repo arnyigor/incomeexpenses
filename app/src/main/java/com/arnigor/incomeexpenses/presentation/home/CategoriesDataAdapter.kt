@@ -12,7 +12,9 @@ import com.arnigor.incomeexpenses.presentation.models.PaymentType
 import com.arnigor.incomeexpenses.utils.toColorInt
 import com.arnigor.incomeexpenses.utils.toFirstUpperCase
 
-class CategoriesDataAdapter :
+class CategoriesDataAdapter(
+    private val onItemSelect: (item: AdapterCategoryModel) -> Unit
+) :
     ListAdapter<AdapterCategoryModel, CategoriesDataAdapter.AdapterViewholder>(
         object : DiffUtil.ItemCallback<AdapterCategoryModel>() {
             override fun areItemsTheSame(
@@ -47,6 +49,7 @@ class CategoriesDataAdapter :
         RecyclerView.ViewHolder(itemBinding.root) {
         fun bind(item: AdapterCategoryModel) {
             val root = itemBinding.root
+            root.setOnClickListener { onItemSelect(item) }
             with(itemBinding) {
                 when (item.type) {
                     PaymentType.INCOME -> R.color.greenDark

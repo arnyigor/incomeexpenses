@@ -24,6 +24,7 @@ import com.arnigor.incomeexpenses.R
 import com.arnigor.incomeexpenses.databinding.FragmentHomeBinding
 import com.arnigor.incomeexpenses.presentation.MainActivity
 import com.arnigor.incomeexpenses.presentation.main.HeaderDataChangedListener
+import com.arnigor.incomeexpenses.presentation.models.AdapterCategoryModel
 import com.arnigor.incomeexpenses.presentation.models.PaymentCategory
 import com.arnigor.incomeexpenses.utils.alertDialog
 import com.arnigor.incomeexpenses.utils.toDrawable
@@ -37,6 +38,7 @@ import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccoun
 import com.google.api.client.util.ExponentialBackOff
 import com.google.api.services.sheets.v4.SheetsScopes
 import dagger.android.support.AndroidSupportInjection
+import java.util.*
 import javax.inject.Inject
 import kotlin.properties.Delegates
 
@@ -116,14 +118,18 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         }
         categoriesAdapter = CategoriesAdapter(requireContext())
         spinCategories.adapter = categoriesAdapter
-        categoriesDataAdapter = CategoriesDataAdapter()
-        rvCategories.apply {
-            layoutManager = object : LinearLayoutManager(requireContext()) {
-                override fun canScrollVertically(): Boolean {
-                    return false
-                }
+    }
+
+    private fun selectCategory(item: AdapterCategoryModel) {
+        with(binding) {
+            categoriesAdapter?.items?.indexOfFirst {
+                val cat = it.categoryTitle?.toLowerCase(Locale.getDefault())
+                val itemCategory =
+                    item.title?.toString(requireContext())?.toLowerCase(Locale.getDefault())
+                cat == itemCategory
+            }.takeIf { it != -1 && it != null }?.let {
+                spinCategories.setSelection(it)
             }
-            adapter = categoriesDataAdapter
         }
     }
 
@@ -157,7 +163,6 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             )
         } else {
             getResult.launch(getGoogleClient()?.signInIntent)
-//            startActivityForResult(getGoogleClient()?.signInIntent, RQ_GOOGLE_SIGN_IN)
         }
     }
 
@@ -305,6 +310,15 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
                 binding.root.findNavController()
                     .navigate(HomeFragmentDirections.actionNavHomeToNavSettings())
             }
+        }
+        categoriesDataAdapter = CategoriesDataAdapter(
+            onItemSelect = (::selectCategory)
+        )
+        rvCategories.apply {
+            layoutManager = object : LinearLayoutManager(requireContext()) {
+                override fun canScrollVertically(): Boolean = false
+            }
+            adapter = categoriesDataAdapter
         }
     }
 
