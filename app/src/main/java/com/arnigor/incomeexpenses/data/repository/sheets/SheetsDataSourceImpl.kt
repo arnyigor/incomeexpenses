@@ -8,6 +8,7 @@ import com.google.api.client.json.jackson2.JacksonFactory
 import com.google.api.client.util.DateTime
 import com.google.api.services.drive.Drive
 import com.google.api.services.drive.model.File
+import com.google.api.services.drive.model.Revision
 import com.google.api.services.sheets.v4.Sheets
 import com.google.api.services.sheets.v4.model.Spreadsheet
 import com.google.api.services.sheets.v4.model.UpdateValuesResponse
@@ -67,6 +68,8 @@ class SheetsDataSourceImpl @Inject constructor() : SheetsDataSource {
             .get(spreadsheetId)
             .setFields("id, modifiedTime, createdTime, modifiedByMe")
             .execute()
+        val revisions = getRevisions(spreadsheetId)
+        getRevision(spreadsheetId, revisions?.lastOrNull()?.id)
         val (modifiedTime, duration) = getModifiedTimes(file)
         return SpreadsheetModifiedData(
             createdTime = formatTime(file?.createdTime, "dd MM yyyy HH:mm"),
@@ -74,6 +77,21 @@ class SheetsDataSourceImpl @Inject constructor() : SheetsDataSource {
             modifiedByMe = file?.modifiedByMe == true,
             duration = duration
         )
+    }
+
+    suspend fun getRevisions(spreadsheetId: String): MutableList<Revision>? {
+        val revisions = driveApi.revisions()
+            .list(spreadsheetId)
+            .execute()
+        return revisions.revisions
+    }
+
+    suspend fun getRevision(spreadsheetId: String, revisionId: String?) {
+        val revision = driveApi.revisions()
+            .get(spreadsheetId, revisionId)
+            .setFields("fields")
+            .execute()
+        println(revision)
     }
 
     private fun getModifiedTimes(file: File): Pair<String, Long?> {
