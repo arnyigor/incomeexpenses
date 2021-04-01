@@ -5,10 +5,10 @@ import com.arnigor.incomeexpenses.data.repository.sheets.utils.getColumnNameFrom
 import com.arnigor.incomeexpenses.data.repository.sheets.utils.getSpeadsheetIdFromLink
 import com.arnigor.incomeexpenses.presentation.models.*
 import com.arnigor.incomeexpenses.utils.DateTimeUtils
+import com.arnigor.incomeexpenses.utils.normalize
 import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential
 import com.google.api.services.sheets.v4.model.Spreadsheet
 import java.math.BigDecimal
-import java.util.*
 import javax.inject.Inject
 
 
@@ -75,17 +75,27 @@ class SheetsRepositoryImpl @Inject constructor(private val sheetsAPIDataSource: 
         val spreadsheetId = getSpeadsheetIdFromLink(link)
         val months =
             sheetsAPIDataSource.readSpreadSheet(spreadsheetId, "A1:A14", majorDimension = "COLUMNS")
-        val monthIndex: Int
-        if (months.isNotEmpty()) {
-            monthIndex = months.flatten().map { it.toString() }
-                .indexOf(month.toUpperCase(Locale.getDefault()))
-        } else {
-            error("No data found.")
-        }
-        val rangeIndex = monthIndex + 1
+        val rangeIndex = getMonthIndex(months, month) + 1
         val range =
             "${paymentCategory?.sheetPosition}$rangeIndex:${paymentCategory?.sheetPosition}$rangeIndex"
         return Pair(spreadsheetId, range)
+    }
+
+    private fun getMonthIndex(
+        months: List<List<Any>>,
+        month: String
+    ): Int {
+        val monthIndex: Int
+        if (months.isNotEmpty()) {
+            monthIndex = months.flatten().map { it.toString().normalize() }
+                .indexOf(month.normalize())
+        } else {
+            error("No data found.")
+        }
+        if (monthIndex == -1) {
+            error("Не найден месяц")
+        }
+        return monthIndex
     }
 
     override suspend fun readSpreadSheet(link: String): SpreadSheetData {

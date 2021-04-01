@@ -36,8 +36,8 @@
     <string name="preference_header_main">Основные настройки</string>
     <string name="preference_title_doc_link">Ссылка на документ</string>
     <string name="preference_title_doc_link_summary">Ссылка на документ или id документа</string>
-    <string name="income">Входящие</string>
-    <string name="outcome">Траты</string>
+    <string name="income">Доходы</string>
+    <string name="outcome">Расходы</string>
     <string name="balance">Остаток</string>
     <string name="logout">Выйти из аккаунта?</string>
 </resources>

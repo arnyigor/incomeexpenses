@@ -7,10 +7,7 @@ import com.arnigor.incomeexpenses.data.model.SpreadsheetModifiedData
 import com.arnigor.incomeexpenses.data.repository.prefs.PreferencesDataSource
 import com.arnigor.incomeexpenses.data.repository.sheets.SheetsRepository
 import com.arnigor.incomeexpenses.presentation.models.*
-import com.arnigor.incomeexpenses.utils.DateTimeUtils
-import com.arnigor.incomeexpenses.utils.ResourceString
-import com.arnigor.incomeexpenses.utils.SimpleString
-import com.arnigor.incomeexpenses.utils.mutableLiveData
+import com.arnigor.incomeexpenses.utils.*
 import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential
 import com.google.api.client.googleapis.extensions.android.gms.auth.GooglePlayServicesAvailabilityIOException
 import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException
@@ -19,7 +16,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
-import java.util.*
 
 class HomeViewModel(
     private val sheetsRepository: SheetsRepository,
@@ -111,7 +107,7 @@ class HomeViewModel(
         val list = mutableListOf<AdapterCategoryModel>().apply {
             var totalIncome = BigDecimal.ZERO
             var totalOutcome = BigDecimal.ZERO
-            sheetdata?.monthsData?.find { month.toUpperCase(Locale.getDefault()) == it.monthName }
+            sheetdata?.monthsData?.find { month.normalize() == it.monthName?.normalize() }
                 ?.payments?.let { payments ->
                     for (payment in sortPayments(payments)) {
                         val value = payment.value ?: BigDecimal.ZERO
@@ -234,8 +230,7 @@ class HomeViewModel(
                 .flowOn(Dispatchers.IO)
                 .catch { handleError(it) }
                 .collect { (month, value) ->
-                    currentMonth.value = month[0].toUpperCase() +
-                            month.substring(1).toLowerCase(Locale.getDefault())
+                    currentMonth.value = month.toFirstUpperCase()
                     categoriesData.value = value
                 }
         }
