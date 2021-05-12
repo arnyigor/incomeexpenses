@@ -63,17 +63,19 @@ class SheetsDataSourceImpl @Inject constructor() : SheetsDataSource {
     }
 
     override suspend fun getModifiedData(spreadsheetId: String): SpreadsheetModifiedData {
-        val file = driveApi.files()
+        return driveApi.files()
             .get(spreadsheetId)
             .setFields("id, modifiedTime, createdTime, modifiedByMe")
             .execute()
-        val (modifiedTime, duration) = getModifiedTimes(file)
-        return SpreadsheetModifiedData(
-            createdTime = formatTime(file?.createdTime, "dd MM yyyy HH:mm"),
-            modifiedTime = modifiedTime,
-            modifiedByMe = file?.modifiedByMe == true,
-            duration = duration
-        )
+            .let { file ->
+                val (modifiedTime, duration) = getModifiedTimes(file)
+                SpreadsheetModifiedData(
+                    createdTime = formatTime(file?.createdTime, "dd MM yyyy HH:mm"),
+                    modifiedTime = modifiedTime,
+                    modifiedByMe = file?.modifiedByMe == true,
+                    duration = duration
+                )
+            }
     }
 
     private fun getModifiedTimes(file: File): Pair<String, Long?> {

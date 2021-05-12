@@ -62,7 +62,7 @@ class CategoriesDataAdapter(
                     tvCategory.setTextColor(it.toColorInt(root.context))
                 }
                 tvCategory.text = item.title?.toString(root.context)?.toFirstUpperCase()
-                tvCatSum.text = item.sum.toString()
+                tvCatSum.text = item.sum
             }
         }
     }

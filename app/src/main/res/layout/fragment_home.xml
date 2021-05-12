@@ -79,14 +79,35 @@
             app:layout_constraintTop_toTopOf="parent"
             tools:visibility="visible" />
 
+        <TextView
+            android:id="@+id/tvSort"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:layout_marginTop="8dp"
+            android:text="@string/sort_by"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/barierTop" />
+
+        <Spinner
+            android:id="@+id/spinSort"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:entries="@array/sorts"
+            app:layout_constraintBaseline_toBaselineOf="@+id/tvSort"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/tvSort" />
+
         <Spinner
             android:id="@+id/spinMonths"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
             android:entries="@array/monthes"
+            app:layout_constraintBaseline_toBaselineOf="@+id/tvMonth"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/barierTop" />
+            app:layout_constraintStart_toEndOf="@+id/tvMonth" />
 
         <TextView
             android:id="@+id/tvCategoriesCaption"
@@ -130,6 +151,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:digits="0123456789+,"
+                android:imeOptions="actionDone"
                 android:inputType="numberDecimal" />
         </com.google.android.material.textfield.TextInputLayout>
 
@@ -138,12 +160,24 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/margin"
+            android:layout_marginBottom="24dp"
             android:text="@string/edit"
             android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/tilCellData"
             tools:visibility="visible" />
+
+        <TextView
+            android:id="@+id/tvMonth"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:layout_marginTop="16dp"
+            android:text="@string/month"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/spinSort" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

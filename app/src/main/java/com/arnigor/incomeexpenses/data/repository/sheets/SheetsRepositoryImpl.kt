@@ -25,13 +25,11 @@ class SheetsRepositoryImpl @Inject constructor(private val sheetsAPIDataSource: 
     }
 
     override suspend fun readSpreadSheetData(link: String): Spreadsheet? {
-        val spreadsheetId = getSpeadsheetIdFromLink(link)
-        return sheetsAPIDataSource.readSpreadSheetData(spreadsheetId)
+        return sheetsAPIDataSource.readSpreadSheetData(getSpeadsheetIdFromLink(link))
     }
 
     override suspend fun getModifiedData(link: String): SpreadsheetModifiedData {
-        val spreadsheetId = getSpeadsheetIdFromLink(link)
-        return sheetsAPIDataSource.getModifiedData(spreadsheetId)
+        return sheetsAPIDataSource.getModifiedData(getSpeadsheetIdFromLink(link))
     }
 
     override suspend fun writeValue(

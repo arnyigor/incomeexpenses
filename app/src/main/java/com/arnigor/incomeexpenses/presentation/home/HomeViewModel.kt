@@ -13,6 +13,7 @@ import com.google.api.client.googleapis.extensions.android.gms.auth.GooglePlaySe
 import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException
 import com.google.api.services.sheets.v4.model.Spreadsheet
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
@@ -21,6 +22,7 @@ class HomeViewModel(
     private val sheetsRepository: SheetsRepository,
     private val preferencesDataSource: PreferencesDataSource,
 ) : ViewModel() {
+    private var sortTypePosition: Int = 0
     private var docLink: String? = null
     private var sheetdata: SpreadSheetData? = null
     private var carrentPayment: PaymentData? = null
@@ -43,7 +45,7 @@ class HomeViewModel(
                 .catch { handleError(it) }
                 .collect {
                     sheetdata = it
-                    getSelectedMonthData()
+                    getSelectedMonthData(sortTypePosition = sortTypePosition)
                     showCategories()
                     loading.value = false
                 }
@@ -61,11 +63,7 @@ class HomeViewModel(
                         )
                     )
                 }.zip(flow {
-                    emit(
-                        sheetsRepository.getModifiedData(
-                            docLink ?: ""
-                        )
-                    )
+                    emit(sheetsRepository.getModifiedData(docLink ?: ""))
                 }) { spreadsheet: Spreadsheet?, spreadsheetModifiedData: SpreadsheetModifiedData ->
                     spreadsheet to spreadsheetModifiedData
                 }
@@ -102,7 +100,9 @@ class HomeViewModel(
         }
     }
 
-    private fun getSheetDataByMonth(monthName: String? = null): Pair<String, List<AdapterCategoryModel>> {
+    private fun getSheetDataByMonth(
+        monthName: String? = null
+    ): Pair<String, List<AdapterCategoryModel>> {
         val month = monthName ?: DateTimeUtils.getCurrentMonthRuFull()
         val list = mutableListOf<AdapterCategoryModel>().apply {
             var totalIncome = BigDecimal.ZERO
@@ -120,7 +120,7 @@ class HomeViewModel(
                         add(
                             AdapterCategoryModel(
                                 SimpleString(paymentCategory?.categoryTitle),
-                                value,
+                                value?.formatNumberWithSpaces(),
                                 paymentCategory?.paymentType
                             )
                         )
@@ -129,21 +129,21 @@ class HomeViewModel(
             add(
                 AdapterCategoryModel(
                     ResourceString(R.string.income),
-                    totalIncome,
+                    totalIncome?.formatNumberWithSpaces(),
                     PaymentType.INCOME_SUM
                 )
             )
             add(
                 AdapterCategoryModel(
                     ResourceString(R.string.outcome),
-                    totalOutcome,
+                    totalOutcome?.formatNumberWithSpaces(),
                     PaymentType.OUTCOME_SUM
                 )
             )
             add(
                 AdapterCategoryModel(
                     ResourceString(R.string.balance),
-                    totalIncome - totalOutcome,
+                    (totalIncome - totalOutcome).formatNumberWithSpaces(),
                     PaymentType.BALANCE
                 )
             )
@@ -152,13 +152,34 @@ class HomeViewModel(
     }
 
     private fun sortPayments(payments: List<Payment>): List<Payment> {
-        return payments.sortedBy { it.paymentCategory?.categoryTitle }.sortedWith { p1, p2 ->
-            val paymentType1 = p1.paymentCategory?.paymentType
-            val paymentType2 = p2.paymentCategory?.paymentType
-            when {
-                paymentType1 == PaymentType.INCOME && paymentType2 == PaymentType.OUTCOME -> 1
-                paymentType1 == PaymentType.OUTCOME && paymentType2 == PaymentType.INCOME -> -1
-                else -> 0
+        return getSortedList(payments, sortTypePosition)
+            .sortedWith { p1, p2 ->
+                val paymentType1 = p1.paymentCategory?.paymentType
+                val paymentType2 = p2.paymentCategory?.paymentType
+                when {
+                    paymentType1 == PaymentType.INCOME && paymentType2 == PaymentType.OUTCOME -> 1
+                    paymentType1 == PaymentType.OUTCOME && paymentType2 == PaymentType.INCOME -> -1
+                    else -> 0
+                }
+            }
+    }
+
+    private fun getSortedList(
+        list: List<Payment>,
+        sortTypePosition: Int
+    ): List<Payment> {
+        return when (sortTypePosition) {
+            0 -> {
+                list.sortedBy { it.paymentCategory?.categoryTitle }
+            }
+            1 -> {
+                list.sortedByDescending { it.value }
+            }
+            2 -> {
+                list.sortedBy { it.value }
+            }
+            else -> {
+                list.sortedBy { it.paymentCategory?.categoryTitle }
             }
         }
     }
@@ -180,10 +201,17 @@ class HomeViewModel(
         }
     }
 
-    fun readSpreadsheet() {
+    fun readSpreadsheet(delay: Long = 0) {
         val link = docLink
         if (!link.isNullOrBlank()) {
-            loadDocTitle()
+            if (delay != 0L) {
+                viewModelScope.launch {
+                    delay(delay)
+                    loadDocTitle()
+                }
+            } else {
+                loadDocTitle()
+            }
             startReadingSpreadsheet(link)
         } else {
             toast.value = "Пустая ссылка на документ"
@@ -216,7 +244,7 @@ class HomeViewModel(
                 .collect { save ->
                     if (save) {
                         toast.value = "Значение сохранено"
-                        readSpreadsheet()
+                        readSpreadsheet(2000)
                     } else {
                         toast.value = "Значение не сохранено"
                     }
@@ -224,7 +252,8 @@ class HomeViewModel(
         }
     }
 
-    fun getSelectedMonthData(monthName: String? = null) {
+    fun getSelectedMonthData(monthName: String? = null, sortTypePosition: Int = 0) {
+        this.sortTypePosition = sortTypePosition
         viewModelScope.launch {
             flow { emit(getSheetDataByMonth(monthName)) }
                 .flowOn(Dispatchers.IO)

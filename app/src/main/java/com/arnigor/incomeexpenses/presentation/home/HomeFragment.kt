@@ -27,6 +27,7 @@ import com.arnigor.incomeexpenses.presentation.main.HeaderDataChangedListener
 import com.arnigor.incomeexpenses.presentation.models.AdapterCategoryModel
 import com.arnigor.incomeexpenses.presentation.models.PaymentCategory
 import com.arnigor.incomeexpenses.utils.alertDialog
+import com.arnigor.incomeexpenses.utils.doWhenEnterClicked
 import com.arnigor.incomeexpenses.utils.toDrawable
 import com.arnigor.incomeexpenses.utils.viewBinding
 import com.google.android.gms.auth.api.signin.GoogleSignIn
@@ -66,6 +67,9 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         binding.mBtnGetData.isVisible = logined
         binding.rvCategories.isVisible = hasLink && logined
         binding.spinMonths.isVisible = hasLink && logined
+        binding.spinSort.isVisible = hasLink && logined
+        binding.tvSort.isVisible = hasLink && logined
+        binding.tvMonth.isVisible = hasLink && logined
         binding.tvFileData.isVisible = hasLink && logined
         binding.tilCellData.isVisible = hasLink && logined
         binding.spinCategories.isVisible = hasLink && logined
@@ -88,6 +92,9 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
     private var hasLink by Delegates.observable(false) { _, _, hasLink ->
         binding.rvCategories.isVisible = hasLink
         binding.spinMonths.isVisible = hasLink
+        binding.spinSort.isVisible = hasLink
+        binding.tvSort.isVisible = hasLink
+        binding.tvMonth.isVisible = hasLink
         binding.tilCellData.isVisible = hasLink
         binding.spinCategories.isVisible = hasLink
         binding.btnEdt.isVisible = hasLink
@@ -275,6 +282,23 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
 
             }
         }
+        spinSort.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(
+                parent: AdapterView<*>?,
+                view: View?,
+                position: Int,
+                id: Long
+            ) {
+                homeViewModel.getSelectedMonthData(
+                    spinMonths.adapter.getItem(spinMonths.selectedItemPosition).toString(),
+                    position
+                )
+                edtState = true
+            }
+
+            override fun onNothingSelected(parent: AdapterView<*>?) {
+            }
+        }
         spinCategories.onItemSelectedListener = object :
             AdapterView.OnItemSelectedListener {
             override fun onItemSelected(
@@ -319,6 +343,9 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
                 override fun canScrollVertically(): Boolean = false
             }
             adapter = categoriesDataAdapter
+        }
+        tiedtCellData.doWhenEnterClicked {
+            btnEdt.performClick()
         }
     }
 

@@ -29,6 +29,12 @@
         <item>Декабрь</item>
     </string-array>
 
+    <string-array name="sorts">
+        <item>По названию</item>
+        <item>По уменьшению суммы</item>
+        <item>По увеличению суммы</item>
+    </string-array>
+
     <!--Preferences-->
     <string name="preference_key_user_name">pref_key_user_name</string>
     <string name="preference_key_user_email">pref_key_user_email</string>
@@ -40,4 +46,6 @@
     <string name="outcome">Расходы</string>
     <string name="balance">Остаток</string>
     <string name="logout">Выйти из аккаунта?</string>
+    <string name="sort_by">Сортировать</string>
+    <string name="month">Месяц</string>
 </resources>
