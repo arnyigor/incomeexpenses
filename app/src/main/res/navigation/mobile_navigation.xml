@@ -9,14 +9,43 @@
         android:id="@+id/nav_home"
         android:name="com.arnigor.incomeexpenses.presentation.home.HomeFragment"
         android:label="@string/menu_home"
-        tools:layout="@layout/fragment_home" >
+        tools:layout="@layout/fragment_home">
         <action
             android:id="@+id/action_nav_home_to_nav_settings"
-            app:destination="@id/nav_settings" />
+            app:destination="@id/nav_settings"
+            app:enterAnim="@anim/nav_default_enter_anim"
+            app:exitAnim="@anim/nav_default_exit_anim"
+            app:popEnterAnim="@anim/nav_default_pop_enter_anim"
+            app:popExitAnim="@anim/nav_default_pop_exit_anim" />
+        <action
+            android:id="@+id/action_nav_home_to_nav_details"
+            app:destination="@id/nav_details" />
     </fragment>
     <fragment
         android:id="@+id/nav_settings"
         android:name="com.arnigor.incomeexpenses.presentation.settings.SettingsFragment"
         android:label="@string/menu_settings" />
+    <fragment
+        android:id="@+id/nav_details"
+        android:name="com.arnigor.incomeexpenses.presentation.details.DetailsFragment"
+        android:label="@string/menu_edit"
+        tools:layout="@layout/fragment_details">
+        <argument
+            android:name="categories"
+            app:argType="com.arnigor.incomeexpenses.presentation.models.PaymentCategory[]"
+            app:nullable="true" />
+        <argument
+            android:name="category"
+            app:argType="com.arnigor.incomeexpenses.presentation.models.PaymentCategory"
+            app:nullable="true" />
+        <argument
+            android:name="month"
+            app:argType="string"
+            app:nullable="true" />
+        <argument
+            android:name="cellData"
+            app:argType="string"
+            app:nullable="true" />
+    </fragment>
 
 </navigation>

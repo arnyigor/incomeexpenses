@@ -105,7 +105,8 @@ class SheetsDataSourceImpl @Inject constructor() : SheetsDataSource {
         range: String,
         cellValue: String?
     ): Boolean {
-        val values: List<List<Any>> = listOf(listOf(cellValue ?: ""))
+        val value = cellValue.takeIf { it.isNullOrBlank().not() && it != "=" } ?: ""
+        val values: List<List<Any>> = listOf(listOf(value))
         val body: ValueRange = ValueRange()
             .setValues(values)
         val result: UpdateValuesResponse =

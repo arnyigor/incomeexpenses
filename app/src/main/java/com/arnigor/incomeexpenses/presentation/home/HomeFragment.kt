@@ -6,10 +6,11 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Bundle
 import android.util.Log
+import android.view.Menu
+import android.view.MenuInflater
 import android.view.View
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
-import android.widget.EditText
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.DrawableRes
@@ -18,6 +19,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.navigation.findNavController
+import androidx.navigation.fragment.findNavController
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.arnigor.incomeexpenses.R
@@ -27,7 +29,7 @@ import com.arnigor.incomeexpenses.presentation.main.HeaderDataChangedListener
 import com.arnigor.incomeexpenses.presentation.models.AdapterCategoryModel
 import com.arnigor.incomeexpenses.presentation.models.PaymentCategory
 import com.arnigor.incomeexpenses.utils.alertDialog
-import com.arnigor.incomeexpenses.utils.doWhenEnterClicked
+import com.arnigor.incomeexpenses.utils.getIndexBy
 import com.arnigor.incomeexpenses.utils.toDrawable
 import com.arnigor.incomeexpenses.utils.viewBinding
 import com.google.android.gms.auth.api.signin.GoogleSignIn
@@ -39,7 +41,6 @@ import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccoun
 import com.google.api.client.util.ExponentialBackOff
 import com.google.api.services.sheets.v4.SheetsScopes
 import dagger.android.support.AndroidSupportInjection
-import java.util.*
 import javax.inject.Inject
 import kotlin.properties.Delegates
 
@@ -50,19 +51,13 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         const val RQ_GOOGLE_SIGN_IN = 1000
     }
 
+    private var selectedCategory: PaymentCategory? = null
+    private var currentMonth: String? = null
     private var headerDataChangedListener: HeaderDataChangedListener? = null
     private var sharedPreferences: SharedPreferences? = null
     private var googleAccountCredential: GoogleAccountCredential? = null
     private var categoriesAdapter: CategoriesAdapter? = null
     private var categoriesDataAdapter: CategoriesDataAdapter? = null
-    private var edtState by Delegates.observable(true) { _, _, editState ->
-        binding.tilCellData.isVisible = !editState
-        if (editState) {
-            binding.btnEdt.setText(R.string.edit)
-        } else {
-            binding.btnEdt.setText(R.string.save)
-        }
-    }
     private var signedIn by Delegates.observable(false) { _, _, logined ->
         binding.mBtnGetData.isVisible = logined
         binding.rvCategories.isVisible = hasLink && logined
@@ -71,10 +66,8 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         binding.tvSort.isVisible = hasLink && logined
         binding.tvMonth.isVisible = hasLink && logined
         binding.tvFileData.isVisible = hasLink && logined
-        binding.tilCellData.isVisible = hasLink && logined
         binding.spinCategories.isVisible = hasLink && logined
         binding.btnEdt.isVisible = hasLink && logined
-        binding.tvCategoriesCaption.isVisible = hasLink && logined
         @DrawableRes
         val icon = if (logined) {
             R.drawable.ic_logout
@@ -95,10 +88,8 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         binding.spinSort.isVisible = hasLink
         binding.tvSort.isVisible = hasLink
         binding.tvMonth.isVisible = hasLink
-        binding.tilCellData.isVisible = hasLink
         binding.spinCategories.isVisible = hasLink
         binding.btnEdt.isVisible = hasLink
-        binding.tvCategoriesCaption.isVisible = hasLink
         @DrawableRes
         val icon = if (hasLink) R.drawable.ic_refresh else R.drawable.ic_insert_link
         binding.mBtnGetData.setImageDrawable(icon.toDrawable(requireContext()))
@@ -116,36 +107,45 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
 
     @SuppressLint("SetTextI18n")
     private fun initBinding(binding: FragmentHomeBinding) = with(binding) {
-        tilCellData.setEndIconOnClickListener {
-            val toString = tiedtCellData.text.toString()
-            if (toString.endsWith("+").not()) {
-                tiedtCellData.setText("$toString+")
-            }
-            tiedtCellData.setSelection(toString.length + 1)
-        }
         categoriesAdapter = CategoriesAdapter(requireContext())
         spinCategories.adapter = categoriesAdapter
     }
 
     private fun selectCategory(item: AdapterCategoryModel) {
-        with(binding) {
-            categoriesAdapter?.items?.indexOfFirst {
-                val cat = it.categoryTitle?.toLowerCase(Locale.getDefault())
-                val itemCategory =
-                    item.title?.toString(requireContext())?.toLowerCase(Locale.getDefault())
-                cat == itemCategory
-            }.takeIf { it != -1 && it != null }?.let {
-                spinCategories.setSelection(it)
+        alertDialog(
+            title = getString(R.string.edit_question),
+            content = getString(R.string.edit_question_desc, item.title?.toString(requireContext())),
+            btnCancelText = getString(android.R.string.cancel),
+            btnOkText = getString(android.R.string.ok),
+            cancelable = true,
+            onConfirm = {
+                categoriesAdapter?.items?.getIndexBy {
+                    isSameCategory(
+                        it,
+                        item.title?.toString(requireContext())
+                    )
+                }?.let {
+                    val (selectedCategory, month) = getCategoriesAndMonths(it)
+                    homeViewModel.getFullDataOfCategory(selectedCategory, month)
+                    this.selectedCategory = selectedCategory
+                    this.currentMonth = month
+                }
             }
-        }
+        )
     }
 
-    private fun getCategoriesAndMonths(): Pair<PaymentCategory?, String> {
-        val selectedCategory =
-            categoriesAdapter?.getItem(binding.spinCategories.selectedItemPosition)
+    private fun isSameCategory(
+        category: PaymentCategory,
+        title: String?
+    ) = category.categoryTitle?.lowercase() == title
+        ?.lowercase()
+
+    private fun getCategoriesAndMonths(position: Int): Pair<PaymentCategory?, String> {
         val spinMonths = binding.spinMonths
-        val month = spinMonths.adapter.getItem(spinMonths.selectedItemPosition).toString()
-        return Pair(selectedCategory, month)
+        return Pair(
+            categoriesAdapter?.getItem(position),
+            spinMonths.adapter.getItem(spinMonths.selectedItemPosition).toString()
+        )
     }
 
     private fun btnSingnInClick() {
@@ -206,8 +206,8 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
                 }
             }
             .addOnFailureListener { exception: Exception? ->
-                Toast.makeText(requireContext(), "Unable to sign in", Toast.LENGTH_SHORT).show()
                 Log.e(TAG, "Unable to sign in.", exception)
+                homeViewModel.handleError(exception)
             }
     }
 
@@ -233,6 +233,16 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         edit?.apply()
     }
 
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setHasOptionsMenu(true)
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
+        super.onCreateOptionsMenu(menu, inflater)
+        menu.clear()
+    }
+
     override fun onAttach(context: Context) {
         AndroidSupportInjection.inject(this)
         super.onAttach(context)
@@ -249,9 +259,11 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         updateSignIn()
         observeData()
         uiListeners()
-        homeViewModel.updateDocLink()
-        homeViewModel.loadDocTitle()
-        homeViewModel.readSpreadsheet()
+        with(homeViewModel) {
+            updateDocLink()
+            loadDocTitle()
+            readSpreadsheet()
+        }
     }
 
     override fun onResume() {
@@ -275,7 +287,6 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
                 homeViewModel.getSelectedMonthData(
                     spinMonths.adapter.getItem(position).toString()
                 )
-                edtState = true
             }
 
             override fun onNothingSelected(parent: AdapterView<*>?) {
@@ -293,7 +304,6 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
                     spinMonths.adapter.getItem(spinMonths.selectedItemPosition).toString(),
                     position
                 )
-                edtState = true
             }
 
             override fun onNothingSelected(parent: AdapterView<*>?) {
@@ -307,7 +317,6 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
                 position: Int,
                 id: Long
             ) {
-                edtState = true
             }
 
             override fun onNothingSelected(parent: AdapterView<*>?) {
@@ -315,17 +324,19 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             }
         }
         btnEdt.setOnClickListener {
-            val (selectedCategory, month) = getCategoriesAndMonths()
-            if (edtState) {
-                homeViewModel.getFullDataOfCategory(selectedCategory, month)
-            } else {
-                homeViewModel.writeValue(
-                    selectedCategory,
-                    month,
-                    tiedtCellData.text.toString()
-                )
-            }
-            edtState = !edtState
+            val (cat, m) = getCategoriesAndMonths(binding.spinCategories.selectedItemPosition)
+            alertDialog(
+                title = getString(R.string.edit_question),
+                content = getString(R.string.edit_question_desc, cat?.categoryTitle),
+                btnCancelText = getString(android.R.string.cancel),
+                btnOkText = getString(android.R.string.ok),
+                cancelable = true,
+                onConfirm = {
+                    selectedCategory = cat
+                    currentMonth = m
+                    homeViewModel.getFullDataOfCategory(selectedCategory, m)
+                }
+            )
         }
         mBtnGetData.setOnClickListener {
             if (hasLink) {
@@ -336,17 +347,17 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             }
         }
         categoriesDataAdapter = CategoriesDataAdapter(
-            onItemSelect = (::selectCategory)
+            onItemEdit = (::selectCategory)
         )
         rvCategories.apply {
             layoutManager = object : LinearLayoutManager(requireContext()) {
-                override fun canScrollVertically(): Boolean = false
+                override fun canScrollVertically(): Boolean = true
             }
             adapter = categoriesDataAdapter
         }
-        tiedtCellData.doWhenEnterClicked {
-            btnEdt.performClick()
-        }
+//        tiedtCellData.doWhenEnterClicked {
+//            btnEdt.performClick()
+//        }
     }
 
     private fun observeData() {
@@ -360,14 +371,11 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             categoriesDataAdapter?.submitList(data)
             binding.spinCategories.isVisible = true
             binding.btnEdt.isVisible = true
-            binding.tvCategoriesCaption.isVisible = true
-            edtState = true
         })
         homeViewModel.loading.observe(viewLifecycleOwner, { loading ->
             binding.progressBar.isVisible = loading
             binding.mBtnGetData.isEnabled = !loading
             binding.mBtnSign.isEnabled = !loading
-            binding.tilCellData.isEnabled = !loading
             binding.btnEdt.isEnabled = !loading
             binding.spinCategories.isEnabled = !loading
             binding.spinMonths.isEnabled = !loading
@@ -378,10 +386,14 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             categoriesAdapter?.notifyDataSetChanged()
         })
         homeViewModel.cell.observe(viewLifecycleOwner, { cell ->
-            with(binding) {
-                tiedtCellData.setText(cell)
-                tiedtCellData.focus()
-            }
+            findNavController().navigate(
+                HomeFragmentDirections.actionNavHomeToNavDetails(
+                    categories = categoriesAdapter?.items?.toTypedArray(),
+                    category = selectedCategory,
+                    month = currentMonth,
+                    cellData = cell
+                )
+            )
         })
         homeViewModel.hasDocLink.observe(viewLifecycleOwner, { hasLink ->
             this.hasLink = hasLink
@@ -405,11 +417,6 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
 
     private fun updateTitle(title: String?) {
         (requireActivity() as AppCompatActivity).supportActionBar?.title = title
-    }
-
-    private fun EditText.focus() {
-        requestFocus()
-        setSelection(length())
     }
 
     private fun updateSignIn() {

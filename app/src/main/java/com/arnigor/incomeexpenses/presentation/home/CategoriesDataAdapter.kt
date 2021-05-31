@@ -2,6 +2,7 @@ package com.arnigor.incomeexpenses.presentation.home
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import androidx.core.view.isVisible
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
@@ -13,7 +14,7 @@ import com.arnigor.incomeexpenses.utils.toColorInt
 import com.arnigor.incomeexpenses.utils.toFirstUpperCase
 
 class CategoriesDataAdapter(
-    private val onItemSelect: (item: AdapterCategoryModel) -> Unit
+    private val onItemEdit: (item: AdapterCategoryModel) -> Unit
 ) :
     ListAdapter<AdapterCategoryModel, CategoriesDataAdapter.AdapterViewholder>(
         object : DiffUtil.ItemCallback<AdapterCategoryModel>() {
@@ -49,7 +50,6 @@ class CategoriesDataAdapter(
         RecyclerView.ViewHolder(itemBinding.root) {
         fun bind(item: AdapterCategoryModel) {
             val root = itemBinding.root
-            root.setOnClickListener { onItemSelect(item) }
             with(itemBinding) {
                 when (item.type) {
                     PaymentType.INCOME -> R.color.greenDark
@@ -63,6 +63,12 @@ class CategoriesDataAdapter(
                 }
                 tvCategory.text = item.title?.toString(root.context)?.toFirstUpperCase()
                 tvCatSum.text = item.sum
+                ivEdit.isVisible = item.type !in listOf(
+                    PaymentType.INCOME_SUM,
+                    PaymentType.OUTCOME_SUM,
+                    PaymentType.BALANCE
+                )
+                ivEdit.setOnClickListener { onItemEdit(item) }
             }
         }
     }

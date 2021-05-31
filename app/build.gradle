@@ -3,6 +3,7 @@ apply plugin: 'kotlin-android'
 apply plugin: "androidx.navigation.safeargs.kotlin"
 apply plugin: 'com.google.gms.google-services'
 apply plugin: 'kotlin-kapt'
+apply plugin: 'kotlin-parcelize'
 apply from: "$dep_aliases"
 apply from: "$rootProject.projectDir/commonconfig.gradle"
 

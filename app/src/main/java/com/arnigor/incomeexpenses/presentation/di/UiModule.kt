@@ -8,9 +8,7 @@ import dagger.Provides
 import javax.inject.Provider
 
 @Module(
-    includes = [
-        ActivitiesModule::class
-    ]
+    includes = [ActivitiesModule::class]
 )
 class UiModule {
 

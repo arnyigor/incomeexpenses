@@ -14,7 +14,6 @@ class CategoriesAdapter(context: Context) :
         } else {
             context.getString(R.string.outcome)
         }
-        val title = item?.categoryTitle ?: ""
-        return "$title $type"
+        return "${item?.categoryTitle ?: ""} $type"
     }
 }

@@ -5,6 +5,7 @@
     <string name="nav_header_desc">Navigation header</string>
     <string name="menu_home">Home</string>
     <string name="menu_settings">Настройки</string>
+    <string name="menu_edit">Редактировать</string>
     <string name="sign_in">Войти</string>
     <string name="sign_out">Выйти</string>
     <string name="link_to_sheet">Ссылка на таблицу</string>
@@ -13,7 +14,9 @@
     <string name="input_data">Ввести значение</string>
     <string name="save">Сохранить</string>
     <string name="edit">Редактировать</string>
+    <string name="edit_question">Редактировать?</string>
     <string name="categories">Категория</string>
+    <string name="edit_question_desc"><![CDATA[Редактировать сумму категории <b>%s</b>?]]></string>
     <string-array name="monthes">
         <item>Январь</item>
         <item>Февраль</item>
@@ -48,4 +51,5 @@
     <string name="logout">Выйти из аккаунта?</string>
     <string name="sort_by">Сортировать</string>
     <string name="month">Месяц</string>
+    <string name="sum">Сумма</string>
 </resources>
