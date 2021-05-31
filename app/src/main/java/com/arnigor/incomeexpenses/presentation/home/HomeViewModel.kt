@@ -185,7 +185,7 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    private fun handleError(mLastError: Throwable?) {
+    fun handleError(mLastError: Throwable?) {
         loading.value = false
         mLastError?.printStackTrace()
         when (mLastError) {
@@ -202,15 +202,11 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    fun readSpreadsheet(delay: Long = 0) {
+    fun readSpreadsheet() {
         val link = docLink
         if (!link.isNullOrBlank()) {
-            if (delay != 0L) {
-                viewModelScope.launch {
-                    delay(delay)
-                    loadDocTitle()
-                }
-            } else {
+            viewModelScope.launch {
+                delay(2000L)
                 loadDocTitle()
             }
             startReadingSpreadsheet(link)
@@ -229,26 +225,6 @@ class HomeViewModel @Inject constructor(
                 .collect {
                     carrentPayment = it
                     cell.value = it.value ?: ""
-                }
-        }
-    }
-
-    fun writeValue(paymentCategory: PaymentCategory?, month: String, value: String?) {
-        viewModelScope.launch {
-            flow {
-                emit(sheetsRepository.writeValue(docLink ?: "", paymentCategory, month, value))
-            }
-                .flowOn(Dispatchers.IO)
-                .onStart { loading.value = true }
-                .onCompletion { loading.value = false }
-                .catch { handleError(it) }
-                .collect { save ->
-                    if (save) {
-                        toast.value = "Значение сохранено"
-                        readSpreadsheet(2000)
-                    } else {
-                        toast.value = "Значение не сохранено"
-                    }
                 }
         }
     }

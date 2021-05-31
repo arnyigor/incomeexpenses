@@ -130,12 +130,17 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
     private fun selectCategory(item: AdapterCategoryModel) {
         alertDialog(
             title = getString(R.string.edit_question),
-            content = "Редактировать сумму категории ${item.title?.toString(requireContext())}?",
+            content = getString(R.string.edit_question_desc, item.title?.toString(requireContext())),
             btnCancelText = getString(android.R.string.cancel),
             btnOkText = getString(android.R.string.ok),
             cancelable = true,
             onConfirm = {
-                categoriesAdapter?.items?.getIndexBy { isSameCategory(it, item) }?.let {
+                categoriesAdapter?.items?.getIndexBy {
+                    isSameCategory(
+                        it,
+                        item.title?.toString(requireContext())
+                    )
+                }?.let {
                     val (selectedCategory, month) = getCategoriesAndMonths(it)
                     homeViewModel.getFullDataOfCategory(selectedCategory, month)
                     this.selectedCategory = selectedCategory
@@ -147,8 +152,8 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
 
     private fun isSameCategory(
         category: PaymentCategory,
-        item: AdapterCategoryModel
-    ) = category.categoryTitle?.lowercase() == item.title?.toString(requireContext())
+        title: String?
+    ) = category.categoryTitle?.lowercase() == title
         ?.lowercase()
 
     private fun getCategoriesAndMonths(position: Int): Pair<PaymentCategory?, String> {
@@ -217,8 +222,8 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
                 }
             }
             .addOnFailureListener { exception: Exception? ->
-                Toast.makeText(requireContext(), "Unable to sign in", Toast.LENGTH_SHORT).show()
                 Log.e(TAG, "Unable to sign in.", exception)
+                homeViewModel.handleError(exception)
             }
     }
 
@@ -338,8 +343,21 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             }
         }
         btnEdt.setOnClickListener {
-            val (selectedCategory, month) = getCategoriesAndMonths(binding.spinCategories.selectedItemPosition)
-            if (edtState) {
+            val (cat, m) = getCategoriesAndMonths(binding.spinCategories.selectedItemPosition)
+            alertDialog(
+                title = getString(R.string.edit_question),
+                content = getString(R.string.edit_question_desc, cat?.categoryTitle),
+                btnCancelText = getString(android.R.string.cancel),
+                btnOkText = getString(android.R.string.ok),
+                cancelable = true,
+                onConfirm = {
+                    selectedCategory = cat
+                    currentMonth = m
+                    homeViewModel.getFullDataOfCategory(selectedCategory, m)
+                }
+            )
+
+            /*if (edtState) {
                 homeViewModel.getFullDataOfCategory(selectedCategory, month)
             } else {
                 homeViewModel.writeValue(
@@ -348,7 +366,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
                     tiedtCellData.text.toString()
                 )
             }
-            edtState = !edtState
+            edtState = !edtState*/
         }
         mBtnGetData.setOnClickListener {
             if (hasLink) {

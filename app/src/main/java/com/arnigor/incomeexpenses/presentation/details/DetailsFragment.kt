@@ -9,16 +9,17 @@ import android.view.MenuItem
 import android.view.View
 import android.widget.Toast
 import androidx.core.view.isVisible
+import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.navArgs
 import com.arnigor.incomeexpenses.R
 import com.arnigor.incomeexpenses.databinding.FragmentDetailsBinding
 import com.arnigor.incomeexpenses.presentation.home.CategoriesAdapter
 import com.arnigor.incomeexpenses.utils.getIndexBy
+import com.arnigor.incomeexpenses.utils.hideKeyboard
 import com.arnigor.incomeexpenses.utils.viewBinding
 import dagger.android.support.AndroidSupportInjection
 import javax.inject.Inject
-
 
 class DetailsFragment : Fragment(R.layout.fragment_details) {
     private var categoriesAdapter: CategoriesAdapter? = null
@@ -67,6 +68,12 @@ class DetailsFragment : Fragment(R.layout.fragment_details) {
         super.onViewCreated(view, savedInstanceState)
         observeData()
         with(binding) {
+            tiedtCellData.doAfterTextChanged {
+                if (it.toString().isBlank()) {
+                    tiedtCellData.setText("=")
+                    tiedtCellData.setSelection(1)
+                }
+            }
             tilCellData.setEndIconOnClickListener {
                 val data = tiedtCellData.text.toString()
                 if (data.endsWith("+").not()) {
@@ -75,6 +82,7 @@ class DetailsFragment : Fragment(R.layout.fragment_details) {
                 tiedtCellData.setSelection(data.length + 1)
             }
             fabSave.setOnClickListener {
+                requireActivity().hideKeyboard()
                 vm.save(tiedtCellData.text.toString())
             }
         }
@@ -94,9 +102,9 @@ class DetailsFragment : Fragment(R.layout.fragment_details) {
             Toast.makeText(requireContext(), it, Toast.LENGTH_LONG).show()
         })
         vm.onBackPress.observe(viewLifecycleOwner, {
-             if(it){
-                 requireActivity().onBackPressed()
-             }
+            if (it) {
+                requireActivity().onBackPressed()
+            }
         })
         vm.cell.observe(viewLifecycleOwner) { cellData ->
             binding.tiedtCellData.setText(cellData.takeIf { it.isNullOrBlank().not() } ?: "=")

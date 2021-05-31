@@ -16,6 +16,7 @@
     <string name="edit">Редактировать</string>
     <string name="edit_question">Редактировать?</string>
     <string name="categories">Категория</string>
+    <string name="edit_question_desc"><![CDATA[Редактировать сумму категории <b>%s</b>?]]></string>
     <string-array name="monthes">
         <item>Январь</item>
         <item>Февраль</item>
@@ -50,7 +51,5 @@
     <string name="logout">Выйти из аккаунта?</string>
     <string name="sort_by">Сортировать</string>
     <string name="month">Месяц</string>
-    <!-- TODO: Remove or change this placeholder text -->
-    <string name="hello_blank_fragment">Hello blank fragment</string>
     <string name="sum">Сумма</string>
 </resources>
