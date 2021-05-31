@@ -2,6 +2,7 @@ package com.arnigor.incomeexpenses.presentation.home
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import androidx.core.view.isVisible
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
@@ -62,6 +63,11 @@ class CategoriesDataAdapter(
                 }
                 tvCategory.text = item.title?.toString(root.context)?.toFirstUpperCase()
                 tvCatSum.text = item.sum
+                ivEdit.isVisible = item.type !in listOf(
+                    PaymentType.INCOME_SUM,
+                    PaymentType.OUTCOME_SUM,
+                    PaymentType.BALANCE
+                )
                 ivEdit.setOnClickListener { onItemEdit(item) }
             }
         }

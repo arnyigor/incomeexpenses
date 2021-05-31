@@ -28,7 +28,10 @@ import com.arnigor.incomeexpenses.presentation.MainActivity
 import com.arnigor.incomeexpenses.presentation.main.HeaderDataChangedListener
 import com.arnigor.incomeexpenses.presentation.models.AdapterCategoryModel
 import com.arnigor.incomeexpenses.presentation.models.PaymentCategory
-import com.arnigor.incomeexpenses.utils.*
+import com.arnigor.incomeexpenses.utils.alertDialog
+import com.arnigor.incomeexpenses.utils.getIndexBy
+import com.arnigor.incomeexpenses.utils.toDrawable
+import com.arnigor.incomeexpenses.utils.viewBinding
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
@@ -55,14 +58,6 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
     private var googleAccountCredential: GoogleAccountCredential? = null
     private var categoriesAdapter: CategoriesAdapter? = null
     private var categoriesDataAdapter: CategoriesDataAdapter? = null
-    private var edtState by Delegates.observable(true) { _, _, editState ->
-        binding.tilCellData.isVisible = !editState
-        if (editState) {
-            binding.btnEdt.setText(R.string.edit)
-        } else {
-            binding.btnEdt.setText(R.string.save)
-        }
-    }
     private var signedIn by Delegates.observable(false) { _, _, logined ->
         binding.mBtnGetData.isVisible = logined
         binding.rvCategories.isVisible = hasLink && logined
@@ -71,10 +66,8 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         binding.tvSort.isVisible = hasLink && logined
         binding.tvMonth.isVisible = hasLink && logined
         binding.tvFileData.isVisible = hasLink && logined
-        binding.tilCellData.isVisible = hasLink && logined
         binding.spinCategories.isVisible = hasLink && logined
         binding.btnEdt.isVisible = hasLink && logined
-        binding.tvCategoriesCaption.isVisible = hasLink && logined
         @DrawableRes
         val icon = if (logined) {
             R.drawable.ic_logout
@@ -95,10 +88,8 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         binding.spinSort.isVisible = hasLink
         binding.tvSort.isVisible = hasLink
         binding.tvMonth.isVisible = hasLink
-        binding.tilCellData.isVisible = hasLink
         binding.spinCategories.isVisible = hasLink
         binding.btnEdt.isVisible = hasLink
-        binding.tvCategoriesCaption.isVisible = hasLink
         @DrawableRes
         val icon = if (hasLink) R.drawable.ic_refresh else R.drawable.ic_insert_link
         binding.mBtnGetData.setImageDrawable(icon.toDrawable(requireContext()))
@@ -116,13 +107,6 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
 
     @SuppressLint("SetTextI18n")
     private fun initBinding(binding: FragmentHomeBinding) = with(binding) {
-        tilCellData.setEndIconOnClickListener {
-            val toString = tiedtCellData.text.toString()
-            if (toString.endsWith("+").not()) {
-                tiedtCellData.setText("$toString+")
-            }
-            tiedtCellData.setSelection(toString.length + 1)
-        }
         categoriesAdapter = CategoriesAdapter(requireContext())
         spinCategories.adapter = categoriesAdapter
     }
@@ -303,7 +287,6 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
                 homeViewModel.getSelectedMonthData(
                     spinMonths.adapter.getItem(position).toString()
                 )
-                edtState = true
             }
 
             override fun onNothingSelected(parent: AdapterView<*>?) {
@@ -321,7 +304,6 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
                     spinMonths.adapter.getItem(spinMonths.selectedItemPosition).toString(),
                     position
                 )
-                edtState = true
             }
 
             override fun onNothingSelected(parent: AdapterView<*>?) {
@@ -335,7 +317,6 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
                 position: Int,
                 id: Long
             ) {
-                edtState = true
             }
 
             override fun onNothingSelected(parent: AdapterView<*>?) {
@@ -356,17 +337,6 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
                     homeViewModel.getFullDataOfCategory(selectedCategory, m)
                 }
             )
-
-            /*if (edtState) {
-                homeViewModel.getFullDataOfCategory(selectedCategory, month)
-            } else {
-                homeViewModel.writeValue(
-                    selectedCategory,
-                    month,
-                    tiedtCellData.text.toString()
-                )
-            }
-            edtState = !edtState*/
         }
         mBtnGetData.setOnClickListener {
             if (hasLink) {
@@ -381,13 +351,13 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         )
         rvCategories.apply {
             layoutManager = object : LinearLayoutManager(requireContext()) {
-                override fun canScrollVertically(): Boolean = false
+                override fun canScrollVertically(): Boolean = true
             }
             adapter = categoriesDataAdapter
         }
-        tiedtCellData.doWhenEnterClicked {
-            btnEdt.performClick()
-        }
+//        tiedtCellData.doWhenEnterClicked {
+//            btnEdt.performClick()
+//        }
     }
 
     private fun observeData() {
@@ -401,14 +371,11 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             categoriesDataAdapter?.submitList(data)
             binding.spinCategories.isVisible = true
             binding.btnEdt.isVisible = true
-            binding.tvCategoriesCaption.isVisible = true
-            edtState = true
         })
         homeViewModel.loading.observe(viewLifecycleOwner, { loading ->
             binding.progressBar.isVisible = loading
             binding.mBtnGetData.isEnabled = !loading
             binding.mBtnSign.isEnabled = !loading
-            binding.tilCellData.isEnabled = !loading
             binding.btnEdt.isEnabled = !loading
             binding.spinCategories.isEnabled = !loading
             binding.spinMonths.isEnabled = !loading
