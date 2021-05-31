@@ -24,9 +24,12 @@ class HomeViewModel @Inject constructor(
     private val sheetsRepository: SheetsRepository,
     private val preferencesDataSource: PreferencesDataSource,
 ) : ViewModel() {
+    private var docLink: String? = null
+    private var sheetdata: SpreadSheetData? = null
+    private var carrentPayment: PaymentData? = null
     private var sortTypePosition by Delegates.observable(0, { _, oldValue, newValue ->
         if (oldValue != newValue) {
-            if (preferencesDataSource.getPrefBool(R.string.pref_key_save_sort) == true) {
+            if (isSaveSortPosition()) {
                 preferencesDataSource.put(
                     R.string.pref_key_sort_position,
                     newValue
@@ -34,9 +37,6 @@ class HomeViewModel @Inject constructor(
             }
         }
     })
-    private var docLink: String? = null
-    private var sheetdata: SpreadSheetData? = null
-    private var carrentPayment: PaymentData? = null
     val toast = mutableLiveData<String>(null)
     val spinSortPosition = mutableLiveData<Int>(0)
     val title = mutableLiveData<String>(null)
@@ -52,9 +52,9 @@ class HomeViewModel @Inject constructor(
     private fun startReadingSpreadsheet(link: String) {
         viewModelScope.launch {
             loading.value = true
-            if (preferencesDataSource.getPrefBool(R.string.pref_key_save_sort) == true) {
+            if (isSaveSortPosition()) {
                 sortTypePosition =
-                    preferencesDataSource.getPrefInt(R.string.pref_key_sort_position) ?: 0
+                    preferencesDataSource.getPrefInt(R.string.pref_key_sort_position,0)
                 spinSortPosition.value = sortTypePosition
             }
             flow { emit(sheetsRepository.readSpreadSheet(link)) }
@@ -68,6 +68,9 @@ class HomeViewModel @Inject constructor(
                 }
         }
     }
+
+    private fun isSaveSortPosition() =
+        preferencesDataSource.getPrefBool(R.string.pref_key_save_sort, true)
 
     fun loadDocTitle() {
         if (docLink.isNullOrBlank().not()) {

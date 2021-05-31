@@ -40,11 +40,11 @@ class PreferencesDataSourceImpl @Inject constructor(
         return sharedPreferences.all[context.getString(prefKey)] as? String
     }
 
-    override fun getPrefInt(@StringRes prefKey: Int): Int? {
-        return sharedPreferences.all[context.getString(prefKey)] as? Int
+    override fun getPrefInt(@StringRes prefKey: Int, defaultValue: Int): Int {
+        return (sharedPreferences.all[context.getString(prefKey)] as? Int) ?: defaultValue
     }
 
-    override fun getPrefBool(@StringRes prefKey: Int): Boolean? {
-        return sharedPreferences.all[context.getString(prefKey)] as? Boolean
+    override fun getPrefBool(@StringRes prefKey: Int, defaultValue: Boolean): Boolean {
+        return (sharedPreferences.all[context.getString(prefKey)] as? Boolean) ?: defaultValue
     }
 }
