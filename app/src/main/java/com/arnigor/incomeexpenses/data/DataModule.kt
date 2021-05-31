@@ -6,6 +6,8 @@ import com.arnigor.incomeexpenses.data.repository.sheets.SheetsDataSource
 import com.arnigor.incomeexpenses.data.repository.sheets.SheetsDataSourceImpl
 import com.arnigor.incomeexpenses.data.repository.sheets.SheetsRepository
 import com.arnigor.incomeexpenses.data.repository.sheets.SheetsRepositoryImpl
+import com.arnigor.incomeexpenses.data.repository.strings.StringsSource
+import com.arnigor.incomeexpenses.data.repository.strings.StringsSourceImpl
 import dagger.Binds
 import dagger.Module
 import javax.inject.Singleton
@@ -23,4 +25,8 @@ interface DataModule {
     @Binds
     @Singleton
     fun bindsPreferencesSource(prefs: PreferencesDataSourceImpl): PreferencesDataSource
+
+    @Binds
+    @Singleton
+    fun bindsStringSource(source: StringsSourceImpl): StringsSource
 }

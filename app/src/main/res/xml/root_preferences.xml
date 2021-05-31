@@ -5,7 +5,14 @@
             app:key="@string/preference_key_doc_link"
             app:summary="@string/preference_title_doc_link_summary"
             app:title="@string/preference_title_doc_link" />
+    </PreferenceCategory>
 
+    <PreferenceCategory app:title="@string/preference_header_other">
+        <CheckBoxPreference
+            app:defaultValue="true"
+            app:key="@string/pref_key_save_sort"
+            app:summary="@string/save_sort_desc"
+            app:title="@string/save_sort" />
     </PreferenceCategory>
 
 </PreferenceScreen>

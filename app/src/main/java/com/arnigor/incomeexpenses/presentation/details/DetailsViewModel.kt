@@ -27,7 +27,7 @@ class DetailsViewModel @Inject constructor(
     private var docLink: String? = null
 
     private fun updateDocLink() {
-        preferencesDataSource.getPref(R.string.preference_key_doc_link).let { docLink ->
+        preferencesDataSource.getPrefString(R.string.preference_key_doc_link).let { docLink ->
             if (this.docLink != docLink) {
                 this.docLink = docLink
             }

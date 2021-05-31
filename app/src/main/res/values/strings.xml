@@ -36,13 +36,16 @@
         <item>По названию</item>
         <item>По уменьшению суммы</item>
         <item>По увеличению суммы</item>
+        <item>Итоги вверху</item>
+        <item>Итоги вверху уменьшение суммы</item>
     </string-array>
 
     <!--Preferences-->
     <string name="preference_key_user_name">pref_key_user_name</string>
     <string name="preference_key_user_email">pref_key_user_email</string>
     <string name="preference_key_doc_link">pref_key_doc_link</string>
-    <string name="preference_header_main">Основные настройки</string>
+    <string name="preference_header_main">Настройки файла</string>
+    <string name="preference_header_other">Остальные настройки</string>
     <string name="preference_title_doc_link">Ссылка на документ</string>
     <string name="preference_title_doc_link_summary">Ссылка на документ или id документа</string>
     <string name="income">Доходы</string>
@@ -52,4 +55,8 @@
     <string name="sort_by">Сортировать</string>
     <string name="month">Месяц</string>
     <string name="sum">Сумма</string>
+    <string name="pref_key_save_sort">PREF_KEY_SAVE_SORT</string>
+    <string name="pref_key_sort_position">PREF_KEY_SORT_POSITION</string>
+    <string name="save_sort">Сохранять сортировку</string>
+    <string name="save_sort_desc">Сортировка будет сохранена при изменении</string>
 </resources>

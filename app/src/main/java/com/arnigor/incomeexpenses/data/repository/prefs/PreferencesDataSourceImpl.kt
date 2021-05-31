@@ -2,6 +2,7 @@ package com.arnigor.incomeexpenses.data.repository.prefs
 
 import android.content.Context
 import android.content.SharedPreferences
+import androidx.annotation.StringRes
 import androidx.preference.PreferenceManager
 import javax.inject.Inject
 
@@ -11,12 +12,8 @@ class PreferencesDataSourceImpl @Inject constructor(
     private var sharedPreferences: SharedPreferences =
         PreferenceManager.getDefaultSharedPreferences(context)
 
-    fun getAll(): Map<String, *>? {
-        return sharedPreferences.all
-    }
-
-    fun put(key: String?, value: Any?) {
-        sharedPreferences.edit().put(key, value).apply()
+    override fun put(@StringRes prefKey: Int, value: Any?) {
+        sharedPreferences.edit().put(context.getString(prefKey), value).apply()
     }
 
     fun remove(vararg key: String) {
@@ -39,7 +36,15 @@ class PreferencesDataSourceImpl @Inject constructor(
         return this
     }
 
-    override fun getPref(prefName: Int): String? {
-        return sharedPreferences.all[context.getString(prefName)] as? String
+    override fun getPrefString(@StringRes prefKey: Int): String? {
+        return sharedPreferences.all[context.getString(prefKey)] as? String
+    }
+
+    override fun getPrefInt(@StringRes prefKey: Int): Int? {
+        return sharedPreferences.all[context.getString(prefKey)] as? Int
+    }
+
+    override fun getPrefBool(@StringRes prefKey: Int): Boolean? {
+        return sharedPreferences.all[context.getString(prefKey)] as? Boolean
     }
 }

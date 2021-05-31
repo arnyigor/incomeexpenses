@@ -284,8 +284,9 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
                 position: Int,
                 id: Long
             ) {
-                homeViewModel.getSelectedMonthData(
-                    spinMonths.adapter.getItem(position).toString()
+                homeViewModel.showSortedMonthData(
+                    spinMonths.adapter.getItem(position).toString(),
+                    spinSort.selectedItemPosition
                 )
             }
 
@@ -300,7 +301,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
                 position: Int,
                 id: Long
             ) {
-                homeViewModel.getSelectedMonthData(
+                homeViewModel.showSortedMonthData(
                     spinMonths.adapter.getItem(spinMonths.selectedItemPosition).toString(),
                     position
                 )
@@ -355,14 +356,14 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             }
             adapter = categoriesDataAdapter
         }
-//        tiedtCellData.doWhenEnterClicked {
-//            btnEdt.performClick()
-//        }
     }
 
     private fun observeData() {
         homeViewModel.toast.observe(viewLifecycleOwner, {
             Toast.makeText(requireContext(), it, Toast.LENGTH_LONG).show()
+        })
+        homeViewModel.spinSortPosition.observe(viewLifecycleOwner, {
+            binding.spinSort.setSelection(it)
         })
         homeViewModel.categoriesData.observe(viewLifecycleOwner, { data ->
             if (categoriesDataAdapter?.currentList?.isEmpty() == false) {

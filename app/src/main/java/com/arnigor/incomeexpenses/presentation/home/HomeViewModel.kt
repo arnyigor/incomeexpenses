@@ -18,16 +18,27 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
 import javax.inject.Inject
+import kotlin.properties.Delegates
 
 class HomeViewModel @Inject constructor(
     private val sheetsRepository: SheetsRepository,
     private val preferencesDataSource: PreferencesDataSource,
 ) : ViewModel() {
-    private var sortTypePosition: Int = 0
+    private var sortTypePosition by Delegates.observable(0, { _, oldValue, newValue ->
+        if (oldValue != newValue) {
+            if (preferencesDataSource.getPrefBool(R.string.pref_key_save_sort) == true) {
+                preferencesDataSource.put(
+                    R.string.pref_key_sort_position,
+                    newValue
+                )
+            }
+        }
+    })
     private var docLink: String? = null
     private var sheetdata: SpreadSheetData? = null
     private var carrentPayment: PaymentData? = null
     val toast = mutableLiveData<String>(null)
+    val spinSortPosition = mutableLiveData<Int>(0)
     val title = mutableLiveData<String>(null)
     val fileData = mutableLiveData<String>(null)
     val categoriesData = mutableLiveData<List<AdapterCategoryModel>>(emptyList())
@@ -41,12 +52,17 @@ class HomeViewModel @Inject constructor(
     private fun startReadingSpreadsheet(link: String) {
         viewModelScope.launch {
             loading.value = true
+            if (preferencesDataSource.getPrefBool(R.string.pref_key_save_sort) == true) {
+                sortTypePosition =
+                    preferencesDataSource.getPrefInt(R.string.pref_key_sort_position) ?: 0
+                spinSortPosition.value = sortTypePosition
+            }
             flow { emit(sheetsRepository.readSpreadSheet(link)) }
                 .flowOn(Dispatchers.IO)
                 .catch { handleError(it) }
                 .collect {
                     sheetdata = it
-                    getSelectedMonthData(sortTypePosition = sortTypePosition)
+                    showSortedMonthData(sortTypePosition = sortTypePosition)
                     showCategories()
                     loading.value = false
                 }
@@ -105,51 +121,63 @@ class HomeViewModel @Inject constructor(
         monthName: String? = null
     ): Pair<String, List<AdapterCategoryModel>> {
         val month = monthName ?: DateTimeUtils.getCurrentMonthRuFull()
-        val list = mutableListOf<AdapterCategoryModel>().apply {
-            var totalIncome = BigDecimal.ZERO
-            var totalOutcome = BigDecimal.ZERO
+        val mainData = mutableListOf<AdapterCategoryModel>()
+        val totalData = mutableListOf<AdapterCategoryModel>()
+        var totalIncome = BigDecimal.ZERO
+        var totalOutcome = BigDecimal.ZERO
+        val sortedPayments =
             sheetdata?.monthsData?.find { month.normalize() == it.monthName?.normalize() }
-                ?.payments?.let { payments ->
-                    for (payment in sortPayments(payments)) {
-                        val value = payment.value ?: BigDecimal.ZERO
-                        val paymentCategory = payment.paymentCategory
-                        if (paymentCategory?.paymentType == PaymentType.INCOME) {
-                            totalIncome += value
-                        } else {
-                            totalOutcome += value
-                        }
-                        add(
-                            AdapterCategoryModel(
-                                SimpleString(paymentCategory?.categoryTitle),
-                                value?.formatNumberWithSpaces(),
-                                paymentCategory?.paymentType
-                            )
-                        )
-                    }
-                }
-            add(
+                ?.payments?.let { sortPayments(it) } ?: emptyList()
+        for (payment in sortedPayments) {
+            val value = payment.value ?: BigDecimal.ZERO
+            val paymentCategory = payment.paymentCategory
+            if (paymentCategory?.paymentType == PaymentType.INCOME) {
+                totalIncome += value
+            } else {
+                totalOutcome += value
+            }
+            mainData.add(
                 AdapterCategoryModel(
-                    ResourceString(R.string.income),
-                    totalIncome?.formatNumberWithSpaces(),
-                    PaymentType.INCOME_SUM
-                )
-            )
-            add(
-                AdapterCategoryModel(
-                    ResourceString(R.string.outcome),
-                    totalOutcome?.formatNumberWithSpaces(),
-                    PaymentType.OUTCOME_SUM
-                )
-            )
-            add(
-                AdapterCategoryModel(
-                    ResourceString(R.string.balance),
-                    (totalIncome - totalOutcome).formatNumberWithSpaces(),
-                    PaymentType.BALANCE
+                    SimpleString(paymentCategory?.categoryTitle),
+                    value?.formatNumberWithSpaces(),
+                    paymentCategory?.paymentType
                 )
             )
         }
+        totalData.addSums(totalIncome, totalOutcome)
+        val list = if (sortTypePosition in 3..4) {
+            totalData + mainData
+        } else {
+            mainData + totalData
+        }
         return month to list
+    }
+
+    private fun MutableList<AdapterCategoryModel>.addSums(
+        totalIncome: BigDecimal,
+        totalOutcome: BigDecimal
+    ) {
+        add(
+            AdapterCategoryModel(
+                ResourceString(R.string.income),
+                totalIncome.formatNumberWithSpaces(),
+                PaymentType.INCOME_SUM
+            )
+        )
+        add(
+            AdapterCategoryModel(
+                ResourceString(R.string.outcome),
+                totalOutcome.formatNumberWithSpaces(),
+                PaymentType.OUTCOME_SUM
+            )
+        )
+        add(
+            AdapterCategoryModel(
+                ResourceString(R.string.balance),
+                (totalIncome - totalOutcome).formatNumberWithSpaces(),
+                PaymentType.BALANCE
+            )
+        )
     }
 
     private fun sortPayments(payments: List<Payment>): List<Payment> {
@@ -170,18 +198,11 @@ class HomeViewModel @Inject constructor(
         sortTypePosition: Int
     ): List<Payment> {
         return when (sortTypePosition) {
-            0 -> {
-                list.sortedBy { it.paymentCategory?.categoryTitle }
-            }
-            1 -> {
-                list.sortedByDescending { it.value }
-            }
-            2 -> {
-                list.sortedBy { it.value }
-            }
-            else -> {
-                list.sortedBy { it.paymentCategory?.categoryTitle }
-            }
+            0 -> list.sortedBy { it.paymentCategory?.categoryTitle }
+            1 -> list.sortedByDescending { it.value }
+            2 -> list.sortedBy { it.value }
+            4 -> list.sortedByDescending { it.value }
+            else -> list.sortedBy { it.paymentCategory?.categoryTitle }
         }
     }
 
@@ -229,7 +250,7 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    fun getSelectedMonthData(monthName: String? = null, sortTypePosition: Int = 0) {
+    fun showSortedMonthData(monthName: String? = null, sortTypePosition: Int = 0) {
         this.sortTypePosition = sortTypePosition
         viewModelScope.launch {
             flow { emit(getSheetDataByMonth(monthName)) }
@@ -247,7 +268,7 @@ class HomeViewModel @Inject constructor(
     }
 
     fun updateDocLink() {
-        preferencesDataSource.getPref(R.string.preference_key_doc_link).let { docLink ->
+        preferencesDataSource.getPrefString(R.string.preference_key_doc_link).let { docLink ->
             if (this.docLink != docLink) {
                 hasDocLink.value = docLink.isNullOrBlank().not()
                 this.docLink = docLink
