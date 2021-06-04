@@ -21,46 +21,50 @@
 
     <TextView
         android:id="@+id/tvMonthLabel"
-        android:layout_width="match_parent"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:labelFor="@+id/tvMonth"
         android:text="@string/month"
-        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
     <TextView
         android:id="@+id/tvMonth"
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
         android:textAppearance="@style/TextAppearance.AppCompat.Body2"
+        app:layout_constraintBaseline_toBaselineOf="@+id/tvMonthLabel"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/tvMonthLabel"
+        app:layout_constraintStart_toEndOf="@+id/tvMonthLabel"
         tools:text="Январь" />
 
     <TextView
-        android:id="@+id/tvCategory"
-        android:layout_width="match_parent"
+        android:id="@+id/tvCategoryLabel"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
         android:text="@string/categories"
-        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/tvMonth" />
 
-    <Spinner
-        android:id="@+id/spinCategories"
-        android:layout_width="match_parent"
+    <TextView
+        android:id="@+id/tvCategory"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:textAppearance="@style/TextAppearance.AppCompat.Body2"
+        app:layout_constraintBaseline_toBaselineOf="@+id/tvCategoryLabel"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/tvCategory" />
+        app:layout_constraintStart_toEndOf="@+id/tvCategoryLabel"
+        tools:text="Январь" />
 
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/tilCellData"
         style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
         android:focusable="true"
         android:focusableInTouchMode="true"
         android:hint="@string/sum"
@@ -68,7 +72,7 @@
         app:endIconMode="custom"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/spinCategories">
+        app:layout_constraintTop_toBottomOf="@+id/tvCategory">
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/tiedtCellData"

@@ -1,5 +1,6 @@
 package com.arnigor.incomeexpenses.presentation.home
 
+import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.core.view.isVisible
@@ -58,8 +59,12 @@ class CategoriesDataAdapter(
                     PaymentType.INCOME_SUM -> R.color.green
                     PaymentType.OUTCOME_SUM -> R.color.red
                     else -> null
-                }?.let {
-                    tvCategory.setTextColor(it.toColorInt(root.context))
+                }?.let { colorRes ->
+                    tvCategory.setTextColor(colorRes.toColorInt(root.context))
+                    if (item.type == PaymentType.BALANCE) {
+                        tvCategory.setTextSize(TypedValue.COMPLEX_UNIT_SP, 20f)
+                        tvCatSum.setTextSize(TypedValue.COMPLEX_UNIT_SP, 20f)
+                    }
                 }
                 tvCategory.text = item.title?.toString(root.context)?.toFirstUpperCase()
                 tvCatSum.text = item.sum

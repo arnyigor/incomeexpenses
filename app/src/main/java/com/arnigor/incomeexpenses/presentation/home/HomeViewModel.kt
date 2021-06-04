@@ -54,7 +54,7 @@ class HomeViewModel @Inject constructor(
             loading.value = true
             if (isSaveSortPosition()) {
                 sortTypePosition =
-                    preferencesDataSource.getPrefInt(R.string.pref_key_sort_position,0)
+                    preferencesDataSource.getPrefInt(R.string.pref_key_sort_position, 0)
                 spinSortPosition.value = sortTypePosition
             }
             flow { emit(sheetsRepository.readSpreadSheet(link)) }
@@ -183,30 +183,26 @@ class HomeViewModel @Inject constructor(
         )
     }
 
-    private fun sortPayments(payments: List<Payment>): List<Payment> {
-        return getSortedList(payments, sortTypePosition)
-            .sortedWith { p1, p2 ->
-                val paymentType1 = p1.paymentCategory?.paymentType
-                val paymentType2 = p2.paymentCategory?.paymentType
-                when {
-                    paymentType1 == PaymentType.INCOME && paymentType2 == PaymentType.OUTCOME -> 1
-                    paymentType1 == PaymentType.OUTCOME && paymentType2 == PaymentType.INCOME -> -1
-                    else -> 0
-                }
+    private fun List<Payment>.sortByIncomeOutcome(): List<Payment> {
+        return this.sortedWith { p1, p2 ->
+            val paymentType1 = p1.paymentCategory?.paymentType
+            val paymentType2 = p2.paymentCategory?.paymentType
+            when {
+                paymentType1 == PaymentType.INCOME && paymentType2 == PaymentType.OUTCOME -> 1
+                paymentType1 == PaymentType.OUTCOME && paymentType2 == PaymentType.INCOME -> -1
+                else -> 0
             }
+        }
     }
 
-    private fun getSortedList(
-        list: List<Payment>,
-        sortTypePosition: Int
-    ): List<Payment> {
+    private fun sortPayments(payments: List<Payment>): List<Payment> {
         return when (sortTypePosition) {
-            0 -> list.sortedBy { it.paymentCategory?.categoryTitle }
-            1 -> list.sortedByDescending { it.value }
-            2 -> list.sortedBy { it.value }
-            4 -> list.sortedByDescending { it.value }
-            else -> list.sortedBy { it.paymentCategory?.categoryTitle }
-        }
+            0 -> payments.sortedBy { it.paymentCategory?.categoryTitle }
+            1 -> payments.sortedByDescending { it.value }
+            2 -> payments.sortedBy { it.value }
+            4 -> payments.sortedByDescending { it.value }
+            else -> payments.sortedBy { it.paymentCategory?.categoryTitle }
+        }.sortByIncomeOutcome()
     }
 
     fun handleError(mLastError: Throwable?) {

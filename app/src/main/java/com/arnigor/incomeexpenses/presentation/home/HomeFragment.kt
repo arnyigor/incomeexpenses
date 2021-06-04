@@ -112,26 +112,30 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
     }
 
     private fun selectCategory(item: AdapterCategoryModel) {
-        alertDialog(
-            title = getString(R.string.edit_question),
-            content = getString(R.string.edit_question_desc, item.title?.toString(requireContext())),
-            btnCancelText = getString(android.R.string.cancel),
-            btnOkText = getString(android.R.string.ok),
-            cancelable = true,
-            onConfirm = {
-                categoriesAdapter?.items?.getIndexBy {
-                    isSameCategory(
-                        it,
-                        item.title?.toString(requireContext())
-                    )
-                }?.let {
-                    val (selectedCategory, month) = getCategoriesAndMonths(it)
+        categoriesAdapter?.items?.getIndexBy {
+            isSameCategory(
+                it,
+                item.title?.toString(requireContext())
+            )
+        }?.let { index ->
+            val (selectedCategory, month) = getCategoriesAndMonths(index)
+            alertDialog(
+                title = getString(R.string.edit_question),
+                content = getString(
+                    R.string.edit_question_desc,
+                    item.title?.toString(requireContext()),
+                    month
+                ),
+                btnCancelText = getString(android.R.string.cancel),
+                btnOkText = getString(android.R.string.ok),
+                cancelable = true,
+                onConfirm = {
                     homeViewModel.getFullDataOfCategory(selectedCategory, month)
                     this.selectedCategory = selectedCategory
                     this.currentMonth = month
                 }
-            }
-        )
+            )
+        }
     }
 
     private fun isSameCategory(
@@ -328,7 +332,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             val (cat, m) = getCategoriesAndMonths(binding.spinCategories.selectedItemPosition)
             alertDialog(
                 title = getString(R.string.edit_question),
-                content = getString(R.string.edit_question_desc, cat?.categoryTitle),
+                content = getString(R.string.edit_question_desc, cat?.categoryTitle,m),
                 btnCancelText = getString(android.R.string.cancel),
                 btnOkText = getString(android.R.string.ok),
                 cancelable = true,
