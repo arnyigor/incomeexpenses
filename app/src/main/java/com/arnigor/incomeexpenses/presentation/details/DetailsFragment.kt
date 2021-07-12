@@ -13,6 +13,7 @@ import androidx.core.view.isVisible
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.navArgs
+import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.arnigor.incomeexpenses.R
 import com.arnigor.incomeexpenses.databinding.FragmentDetailsBinding
@@ -23,6 +24,7 @@ import com.arnigor.incomeexpenses.utils.viewBinding
 import dagger.android.support.AndroidSupportInjection
 import javax.inject.Inject
 import kotlin.properties.Delegates
+
 
 class DetailsFragment : Fragment(R.layout.fragment_details) {
 
@@ -71,7 +73,15 @@ class DetailsFragment : Fragment(R.layout.fragment_details) {
         super.onViewCreated(view, savedInstanceState)
         observeData()
         with(binding) {
+            val linearLayoutManager = LinearLayoutManager(requireContext())
+            rvPayments.layoutManager = linearLayoutManager
             rvPayments.adapter = adapter
+            rvPayments.addItemDecoration(
+                DividerItemDecoration(
+                    rvPayments.context,
+                    linearLayoutManager.orientation
+                )
+            )
             tiedtCellData.doAfterTextChanged { s ->
                 if (s.toString().contains(".")) {
                     s?.replace(
@@ -82,7 +92,7 @@ class DetailsFragment : Fragment(R.layout.fragment_details) {
                 }
             }
             fabSave.setOnClickListener {
-                vm.comfirmSave(adapter.currentList)
+                vm.confirmSave(adapter.currentList)
             }
 
             fabAdd.setOnClickListener {

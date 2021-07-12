@@ -5,7 +5,8 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="8dp"
+    android:paddingVertical="8dp"
+    android:paddingHorizontal="16dp"
     tools:context=".presentation.details.DetailsFragment">
 
     <ProgressBar
@@ -73,7 +74,7 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
-        android:textAppearance="@style/TextAppearance.AppCompat.Body2"
+        android:textAppearance="@style/TextAppearance.AppCompat.Title"
         app:layout_constraintBaseline_toBaselineOf="@+id/tvCategorySumLabel"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@+id/tvCategorySumLabel"
@@ -84,7 +85,6 @@
         style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginHorizontal="8dp"
         android:layout_marginTop="8dp"
         android:focusable="true"
         android:focusableInTouchMode="true"
@@ -117,7 +117,6 @@
             android:id="@+id/rvPayments"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
             tools:listitem="@layout/i_payment_item" />
     </ScrollView>
 

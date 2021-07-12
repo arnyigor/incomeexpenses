@@ -78,7 +78,7 @@ class DetailsViewModel @Inject constructor(
         paymentsSum.value = "${curSum}$diff"
     }
 
-    fun comfirmSave(payments: MutableList<PaymentsAdapterModel>) {
+    fun confirmSave(payments: MutableList<PaymentsAdapterModel>) {
         confirmSaveSum.value = payments.sumOf { it.sum }
     }
 
@@ -87,7 +87,7 @@ class DetailsViewModel @Inject constructor(
             flow {
                 val cellValue = StringBuilder().apply {
                     append("=")
-                    for ((ind, value) in payments.withIndex()) {
+                    for ((ind, value) in payments.reversed().withIndex()) {
                         if (ind != 0) {
                             append("+")
                         }
@@ -142,7 +142,7 @@ class DetailsViewModel @Inject constructor(
 
     fun addPayment(payment: String) {
         if (payment.isNotBlank()) {
-            payment.toBigDecimalOrNull()?.let {
+            payment.replace(",", ".").toBigDecimalOrNull()?.let {
                 paymentsDecimal.add(it)
                 updateList()
             }
