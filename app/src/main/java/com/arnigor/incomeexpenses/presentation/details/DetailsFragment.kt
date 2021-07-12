@@ -3,6 +3,7 @@ package com.arnigor.incomeexpenses.presentation.details
 import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Bundle
+import android.text.SpannableStringBuilder
 import android.view.Menu
 import android.view.MenuInflater
 import android.view.MenuItem
@@ -12,6 +13,7 @@ import androidx.core.view.isVisible
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.navArgs
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.arnigor.incomeexpenses.R
 import com.arnigor.incomeexpenses.databinding.FragmentDetailsBinding
 import com.arnigor.incomeexpenses.utils.alertDialog
@@ -19,7 +21,6 @@ import com.arnigor.incomeexpenses.utils.autoClean
 import com.arnigor.incomeexpenses.utils.hideKeyboard
 import com.arnigor.incomeexpenses.utils.viewBinding
 import dagger.android.support.AndroidSupportInjection
-import java.math.BigDecimal
 import javax.inject.Inject
 import kotlin.properties.Delegates
 
@@ -30,7 +31,7 @@ class DetailsFragment : Fragment(R.layout.fragment_details) {
 
     private val args: DetailsFragmentArgs by navArgs()
 
-    private val adapter by autoClean { PaymentsAdapter(::removeItem) }
+    private val adapter by autoClean { PaymentsAdapter(::removeItem, ::changedItem) }
 
     private var editEnable by Delegates.observable(true) { _, oldValue, newValue ->
         if (oldValue != newValue) {
@@ -71,40 +72,23 @@ class DetailsFragment : Fragment(R.layout.fragment_details) {
         observeData()
         with(binding) {
             rvPayments.adapter = adapter
-            tiedtCellData.doAfterTextChanged {
-                if (it.toString().isBlank()) {
-                    tiedtCellData.setText("=")
-                    tiedtCellData.setSelection(1)
-                }
-            }
-            tilCellData.setEndIconOnClickListener {
-                val data = tiedtCellData.text.toString()
-                if (data.length > 1 && data.endsWith("+").not() && data.endsWith("=").not()) {
-                    tiedtCellData.setText("$data+")
-                    tiedtCellData.setSelection(data.length + 1)
-                } else {
-                    tiedtCellData.setSelection(data.length)
+            tiedtCellData.doAfterTextChanged { s ->
+                if (s.toString().contains(".")) {
+                    s?.replace(
+                        0,
+                        s.length,
+                        SpannableStringBuilder(s.toString().replace(".", ","))
+                    )
                 }
             }
             fabSave.setOnClickListener {
-                val split = tiedtCellData.text.toString().split("+", "=")
-                val sumOf =
-                    split.map {
-                        it.replace(",", ".")
-                            .toBigDecimalOrNull() ?: BigDecimal.ZERO
-                    }
-                        .sumOf { it }
-                alertDialog(
-                    title = getString(R.string.edit_question),
-                    content = "Сохранить сумму ${sumOf}?",
-                    btnCancelText = getString(android.R.string.cancel),
-                    btnOkText = getString(android.R.string.ok),
-                    cancelable = true,
-                    onConfirm = {
-                        requireActivity().hideKeyboard()
-                        vm.save(tiedtCellData.text.toString())
-                    }
-                )
+                vm.comfirmSave(adapter.currentList)
+            }
+
+            fabAdd.setOnClickListener {
+                vm.addPayment(tiedtCellData.text.toString())
+                tiedtCellData.setText("")
+                requireActivity().hideKeyboard()
             }
         }
         vm.initUI(
@@ -130,8 +114,9 @@ class DetailsFragment : Fragment(R.layout.fragment_details) {
         vm.editEnable.observe(viewLifecycleOwner) { editEnable ->
             this.editEnable = editEnable
         }
-        vm.payments.observe(viewLifecycleOwner) { payments ->
+        vm.adapterModels.observe(viewLifecycleOwner) { payments ->
             adapter.submitList(payments)
+            (binding.rvPayments.layoutManager as LinearLayoutManager).scrollToPosition(0)
         }
         vm.loading.observe(viewLifecycleOwner, { loading ->
             binding.progressBar.isVisible = loading
@@ -140,12 +125,32 @@ class DetailsFragment : Fragment(R.layout.fragment_details) {
             binding.tvCategory.text = currentCategory?.categoryTitle
         }
         vm.paymentsSum.observe(viewLifecycleOwner) { sum ->
-            binding.tvCategorySum.text = String.format("%s", sum.toString())
+            if (sum != null) {
+                binding.tvCategorySum.text = String.format("%s", sum.toString())
+            }
+        }
+        vm.confirmSaveSum.observe(viewLifecycleOwner) { sum ->
+            if (sum != null) {
+                alertDialog(
+                    title = getString(R.string.edit_question),
+                    content = "Сохранить сумму ${sum}?",
+                    btnCancelText = getString(android.R.string.cancel),
+                    btnOkText = getString(android.R.string.ok),
+                    cancelable = true,
+                    onConfirm = {
+                        requireActivity().hideKeyboard()
+                        vm.save(adapter.currentList)
+                    }
+                )
+            }
         }
     }
 
     private fun removeItem(position: Int) {
-        vm.removeSum(adapter.currentList.getOrNull(position))
-        adapter.notifyItemRemoved(position)
+        vm.removeSum(position)
+    }
+
+    private fun changedItem(position: Int, sum: String) {
+        vm.itemChanged(position, sum)
     }
 }

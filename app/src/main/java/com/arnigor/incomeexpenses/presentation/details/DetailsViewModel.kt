@@ -6,6 +6,7 @@ import com.arnigor.incomeexpenses.R
 import com.arnigor.incomeexpenses.data.repository.prefs.PreferencesDataSource
 import com.arnigor.incomeexpenses.data.repository.sheets.SheetsRepository
 import com.arnigor.incomeexpenses.presentation.models.PaymentCategory
+import com.arnigor.incomeexpenses.presentation.models.PaymentsAdapterModel
 import com.arnigor.incomeexpenses.utils.mutableLiveData
 import com.google.api.client.googleapis.extensions.android.gms.auth.GooglePlayServicesAvailabilityIOException
 import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException
@@ -19,15 +20,17 @@ class DetailsViewModel @Inject constructor(
     private val sheetsRepository: SheetsRepository,
     private val preferencesDataSource: PreferencesDataSource,
 ) : ViewModel() {
+    private var firstLoadSum: BigDecimal = BigDecimal.ZERO
     private var paymentsDecimal: MutableList<BigDecimal> = mutableListOf()
     val categoriesData = mutableLiveData<CurrentCategoryData>()
-    val payments = mutableLiveData<List<BigDecimal>>(emptyList())
-    val paymentsSum = mutableLiveData(BigDecimal.ZERO)
+    val adapterModels = mutableLiveData<List<PaymentsAdapterModel>>(emptyList())
+    val paymentsSum = mutableLiveData<String>(null)
     val editEnable = mutableLiveData(false)
     val loading = mutableLiveData(false)
     val onBackPress = mutableLiveData(false)
     val toast = mutableLiveData<String>(null)
     val currentMonth = mutableLiveData<String>(null)
+    val confirmSaveSum = mutableLiveData<BigDecimal>(null)
     private var docLink: String? = null
 
     private fun updateDocLink() {
@@ -52,28 +55,51 @@ class DetailsViewModel @Inject constructor(
         val data = cellData.takeIf { it.isNullOrBlank().not() } ?: "="
         editEnable.value = data.map { it in 'A'..'Z' }.any { it }.not()
         paymentsDecimal = data.split("[+=]".toRegex())
-            .filter { it != "=" }
-            .filter { it.isNotBlank() }
-            .map { BigDecimal(it) }
+            .filter { it != "=" && it.isNotBlank() }
+            .map { it.replace(",", ".").toBigDecimalOrNull() ?: BigDecimal.ZERO }
             .toMutableList()
-        updateList(paymentsDecimal)
+        firstLoadSum = paymentsDecimal.sumOf { it }
+        updateList()
         month?.let { it -> currentMonth.value = it }
     }
 
-    private fun updateList(mutableList: MutableList<BigDecimal>) {
-        paymentsSum.value = mutableList.sumOf { it }
-        payments.value = mutableList.reversed()
+    private fun updateList() {
+        calcSumDiff()
+        adapterModels.value = paymentsDecimal.reversed().map { PaymentsAdapterModel(it) }
     }
 
-    fun save(cellData: String) {
+    private fun calcSumDiff() {
+        val curSum = paymentsDecimal.sumOf { it }
+        val bigDecimal = curSum - firstLoadSum
+        val diff = bigDecimal
+            .takeIf { bigDecimal.compareTo(BigDecimal.ZERO) != 0 }?.let {
+                "(${firstLoadSum}${if (it > BigDecimal.ZERO) "+" else ""}$it)"
+            } ?: ""
+        paymentsSum.value = "${curSum}$diff"
+    }
+
+    fun comfirmSave(payments: MutableList<PaymentsAdapterModel>) {
+        confirmSaveSum.value = payments.sumOf { it.sum }
+    }
+
+    fun save(payments: MutableList<PaymentsAdapterModel>) {
         viewModelScope.launch {
             flow {
+                val cellValue = StringBuilder().apply {
+                    append("=")
+                    for ((ind, value) in payments.withIndex()) {
+                        if (ind != 0) {
+                            append("+")
+                        }
+                        append(value.sum.toString().replace(".", ","))
+                    }
+                }.toString()
                 emit(
                     sheetsRepository.writeValue(
-                        docLink ?: "",
-                        categoriesData.value?.currentCategory,
-                        currentMonth.value ?: "",
-                        cellData
+                        link = docLink ?: "",
+                        paymentCategory = categoriesData.value?.currentCategory,
+                        month = currentMonth.value ?: "",
+                        cellValue = cellValue
                     )
                 )
             }
@@ -109,7 +135,25 @@ class DetailsViewModel @Inject constructor(
         }
     }
 
-    fun removeSum(decimal: BigDecimal?) {
+    fun removeSum(position: Int) {
+        paymentsDecimal.removeAt(paymentsDecimal.lastIndex - position)
+        updateList()
+    }
 
+    fun addPayment(payment: String) {
+        if (payment.isNotBlank()) {
+            payment.toBigDecimalOrNull()?.let {
+                paymentsDecimal.add(it)
+                updateList()
+            }
+        }
+    }
+
+    fun itemChanged(position: Int, sum: String) {
+        val index = paymentsDecimal.lastIndex - position
+        paymentsDecimal.getOrNull(index)?.let {
+            paymentsDecimal[index] = sum.toBigDecimalOrNull() ?: BigDecimal.ZERO
+        }
+        updateList()
     }
 }

@@ -59,4 +59,5 @@
     <string name="pref_key_sort_position">PREF_KEY_SORT_POSITION</string>
     <string name="save_sort">Сохранять сортировку</string>
     <string name="save_sort_desc">Сортировка будет сохранена при изменении</string>
+    <string name="add">Добавить</string>
 </resources>

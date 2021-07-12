@@ -1,12 +1,14 @@
 package com.arnigor.incomeexpenses.utils
 
 import android.annotation.SuppressLint
+import android.graphics.drawable.Drawable
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.widget.EditText
 import android.widget.TextView
+import androidx.annotation.ColorInt
 
 fun EditText?.doWhenEnterClicked(onChanged: () -> Unit) {
     nonNullOrSkip {
@@ -42,4 +44,22 @@ fun TextView.setOnRightDrawerClickListener(onClick: () -> Unit) {
         }
     })
 }
+
+
+internal fun TextView?.setDrawableEnd(drawable: Drawable?, @ColorInt color: Int? = null) {
+    nonNullOrSkip {
+        setCompoundDrawablesRelativeWithIntrinsicBounds(
+            compoundDrawablesRelative[0],
+            compoundDrawablesRelative[1],
+            drawable?.also { drawable ->
+                color?.also { tintColor ->
+                    drawable.mutate()
+                    drawable.setTint(tintColor)
+                }
+            },
+            compoundDrawablesRelative[3]
+        )
+    }
+}
+
 
