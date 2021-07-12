@@ -12,14 +12,18 @@ import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecovera
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import java.math.BigDecimal
 import javax.inject.Inject
 
 class DetailsViewModel @Inject constructor(
     private val sheetsRepository: SheetsRepository,
     private val preferencesDataSource: PreferencesDataSource,
 ) : ViewModel() {
+    private var paymentsDecimal: MutableList<BigDecimal> = mutableListOf()
     val categoriesData = mutableLiveData<CurrentCategoryData>()
-    val cell = mutableLiveData<String>(null)
+    val payments = mutableLiveData<List<BigDecimal>>(emptyList())
+    val paymentsSum = mutableLiveData(BigDecimal.ZERO)
+    val editEnable = mutableLiveData(false)
     val loading = mutableLiveData(false)
     val onBackPress = mutableLiveData(false)
     val toast = mutableLiveData<String>(null)
@@ -45,8 +49,20 @@ class DetailsViewModel @Inject constructor(
             categories = categories?.toList() ?: emptyList(),
             currentCategory = category
         )
-        cell.value = cellData ?: "="
+        val data = cellData.takeIf { it.isNullOrBlank().not() } ?: "="
+        editEnable.value = data.map { it in 'A'..'Z' }.any { it }.not()
+        paymentsDecimal = data.split("[+=]".toRegex())
+            .filter { it != "=" }
+            .filter { it.isNotBlank() }
+            .map { BigDecimal(it) }
+            .toMutableList()
+        updateList(paymentsDecimal)
         month?.let { it -> currentMonth.value = it }
+    }
+
+    private fun updateList(mutableList: MutableList<BigDecimal>) {
+        paymentsSum.value = mutableList.sumOf { it }
+        payments.value = mutableList.reversed()
     }
 
     fun save(cellData: String) {
@@ -91,5 +107,9 @@ class DetailsViewModel @Inject constructor(
                 toast.value = mLastError?.message
             }
         }
+    }
+
+    fun removeSum(decimal: BigDecimal?) {
+
     }
 }

@@ -22,16 +22,12 @@ class CategoriesDataAdapter(
             override fun areItemsTheSame(
                 oldItem: AdapterCategoryModel,
                 newItem: AdapterCategoryModel
-            ): Boolean {
-                return oldItem == newItem
-            }
+            ): Boolean = oldItem == newItem
 
             override fun areContentsTheSame(
                 oldItem: AdapterCategoryModel,
                 newItem: AdapterCategoryModel
-            ): Boolean {
-                return oldItem == newItem
-            }
+            ): Boolean = oldItem == newItem
         }
     ) {
 

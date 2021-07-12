@@ -15,6 +15,7 @@ import androidx.navigation.fragment.navArgs
 import com.arnigor.incomeexpenses.R
 import com.arnigor.incomeexpenses.databinding.FragmentDetailsBinding
 import com.arnigor.incomeexpenses.utils.alertDialog
+import com.arnigor.incomeexpenses.utils.autoClean
 import com.arnigor.incomeexpenses.utils.hideKeyboard
 import com.arnigor.incomeexpenses.utils.viewBinding
 import dagger.android.support.AndroidSupportInjection
@@ -28,6 +29,8 @@ class DetailsFragment : Fragment(R.layout.fragment_details) {
     lateinit var vm: DetailsViewModel
 
     private val args: DetailsFragmentArgs by navArgs()
+
+    private val adapter by autoClean { PaymentsAdapter(::removeItem) }
 
     private var editEnable by Delegates.observable(true) { _, oldValue, newValue ->
         if (oldValue != newValue) {
@@ -67,6 +70,7 @@ class DetailsFragment : Fragment(R.layout.fragment_details) {
         super.onViewCreated(view, savedInstanceState)
         observeData()
         with(binding) {
+            rvPayments.adapter = adapter
             tiedtCellData.doAfterTextChanged {
                 if (it.toString().isBlank()) {
                     tiedtCellData.setText("=")
@@ -123,10 +127,11 @@ class DetailsFragment : Fragment(R.layout.fragment_details) {
                 requireActivity().onBackPressed()
             }
         })
-        vm.cell.observe(viewLifecycleOwner) { cellData ->
-            val data = cellData.takeIf { it.isNullOrBlank().not() } ?: "="
-            editEnable = data.map { it in 'A'..'Z' }.any { it }.not()
-            binding.tiedtCellData.setText(data)
+        vm.editEnable.observe(viewLifecycleOwner) { editEnable ->
+            this.editEnable = editEnable
+        }
+        vm.payments.observe(viewLifecycleOwner) { payments ->
+            adapter.submitList(payments)
         }
         vm.loading.observe(viewLifecycleOwner, { loading ->
             binding.progressBar.isVisible = loading
@@ -134,5 +139,13 @@ class DetailsFragment : Fragment(R.layout.fragment_details) {
         vm.categoriesData.observe(viewLifecycleOwner) { (_, currentCategory) ->
             binding.tvCategory.text = currentCategory?.categoryTitle
         }
+        vm.paymentsSum.observe(viewLifecycleOwner) { sum ->
+            binding.tvCategorySum.text = String.format("%s", sum.toString())
+        }
+    }
+
+    private fun removeItem(position: Int) {
+        vm.removeSum(adapter.currentList.getOrNull(position))
+        adapter.notifyItemRemoved(position)
     }
 }

@@ -28,10 +28,7 @@ import com.arnigor.incomeexpenses.presentation.MainActivity
 import com.arnigor.incomeexpenses.presentation.main.HeaderDataChangedListener
 import com.arnigor.incomeexpenses.presentation.models.AdapterCategoryModel
 import com.arnigor.incomeexpenses.presentation.models.PaymentCategory
-import com.arnigor.incomeexpenses.utils.alertDialog
-import com.arnigor.incomeexpenses.utils.getIndexBy
-import com.arnigor.incomeexpenses.utils.toDrawable
-import com.arnigor.incomeexpenses.utils.viewBinding
+import com.arnigor.incomeexpenses.utils.*
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
@@ -57,7 +54,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
     private var sharedPreferences: SharedPreferences? = null
     private var googleAccountCredential: GoogleAccountCredential? = null
     private var categoriesAdapter: CategoriesAdapter? = null
-    private var categoriesDataAdapter: CategoriesDataAdapter? = null
+    private val categoriesDataAdapter by autoClean { CategoriesDataAdapter(::selectCategory) }
     private var signedIn by Delegates.observable(false) { _, _, logined ->
         binding.mBtnGetData.isVisible = logined
         binding.rvCategories.isVisible = hasLink && logined
@@ -332,7 +329,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             val (cat, m) = getCategoriesAndMonths(binding.spinCategories.selectedItemPosition)
             alertDialog(
                 title = getString(R.string.edit_question),
-                content = getString(R.string.edit_question_desc, cat?.categoryTitle,m),
+                content = getString(R.string.edit_question_desc, cat?.categoryTitle, m),
                 btnCancelText = getString(android.R.string.cancel),
                 btnOkText = getString(android.R.string.ok),
                 cancelable = true,
@@ -351,9 +348,6 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
                     .navigate(HomeFragmentDirections.actionNavHomeToNavSettings())
             }
         }
-        categoriesDataAdapter = CategoriesDataAdapter(
-            onItemEdit = (::selectCategory)
-        )
         rvCategories.apply {
             layoutManager = object : LinearLayoutManager(requireContext()) {
                 override fun canScrollVertically(): Boolean = true
@@ -370,10 +364,10 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             binding.spinSort.setSelection(it)
         })
         homeViewModel.categoriesData.observe(viewLifecycleOwner, { data ->
-            if (categoriesDataAdapter?.currentList?.isEmpty() == false) {
-                categoriesDataAdapter?.submitList(emptyList())
+            if (categoriesDataAdapter.currentList.isNotEmpty()) {
+                categoriesDataAdapter.submitList(emptyList())
             }
-            categoriesDataAdapter?.submitList(data)
+            categoriesDataAdapter.submitList(data)
             binding.spinCategories.isVisible = true
             binding.btnEdt.isVisible = true
         })
