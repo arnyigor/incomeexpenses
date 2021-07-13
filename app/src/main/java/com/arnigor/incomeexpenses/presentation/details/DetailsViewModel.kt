@@ -54,14 +54,17 @@ class DetailsViewModel @Inject constructor(
         )
         val data = cellData.takeIf { it.isNullOrBlank().not() } ?: "="
         editEnable.value = data.map { it in 'A'..'Z' }.any { it }.not()
-        paymentsDecimal = data.split("[+=]".toRegex())
-            .filter { it != "=" && it.isNotBlank() }
-            .map { it.replace(",", ".").toBigDecimalOrNull() ?: BigDecimal.ZERO }
-            .toMutableList()
+        paymentsDecimal = parsePaymentsFromString(data)
         firstLoadSum = paymentsDecimal.sumOf { it }
         updateList()
         month?.let { it -> currentMonth.value = it }
     }
+
+    private fun parsePaymentsFromString(data: String) =
+        "[\\-+]\\d+\\.?\\d+".toRegex()
+            .findAll(data.replace("=", "").replace(",", "."))
+            .map { it.groupValues[0].toBigDecimalOrNull() ?: BigDecimal.ZERO }
+            .toMutableList()
 
     private fun updateList() {
         calcSumDiff()

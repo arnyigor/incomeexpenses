@@ -1,8 +1,20 @@
 package com.arnigor.incomeexpenses.data.repository.sheets.utils
 
 import org.junit.jupiter.api.Test
+import java.math.BigDecimal
 
 class SpreadSheetUtilsKtTest {
+
+    @Test
+    fun parseSumsFromData() {
+        val sum = "="
+        val sums = "[\\-+]\\d+\\.?\\d+".toRegex()
+            .findAll(sum.replace("=", "").replace(",", "."))
+            .map { it.groupValues[0].toBigDecimalOrNull() ?: BigDecimal.ZERO }
+        val sumOf = sums.sumOf { it }
+        assert(sumOf.compareTo(BigDecimal("-10000")) == 0)
+    }
+
 
     @Test
     fun getSpeadsheetIdFromLink() {
