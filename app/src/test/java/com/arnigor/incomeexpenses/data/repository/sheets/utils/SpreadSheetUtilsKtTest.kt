@@ -1,5 +1,6 @@
 package com.arnigor.incomeexpenses.data.repository.sheets.utils
 
+import com.arnigor.incomeexpenses.utils.parseDataValues
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
 
@@ -7,12 +8,13 @@ class SpreadSheetUtilsKtTest {
 
     @Test
     fun parseSumsFromData() {
-        val sum = "="
-        val sums = "[\\-+]\\d+\\.?\\d+".toRegex()
-            .findAll(sum.replace("=", "").replace(",", "."))
-            .map { it.groupValues[0].toBigDecimalOrNull() ?: BigDecimal.ZERO }
-        val sumOf = sums.sumOf { it }
-        assert(sumOf.compareTo(BigDecimal("-10000")) == 0)
+        assert("=".parseDataValues().sumOf { it }.compareTo(BigDecimal("0")) == 0)
+        assert("=50".parseDataValues().sumOf { it }.compareTo(BigDecimal("50")) == 0)
+        assert("=-50".parseDataValues().sumOf { it }.compareTo(BigDecimal("-50")) == 0)
+        assert("=55,49".parseDataValues().sumOf { it }.compareTo(BigDecimal("55.49")) == 0)
+        assert("=10+12.5".parseDataValues().sumOf { it }.compareTo(BigDecimal("22.50")) == 0)
+        assert("=1.5-0.5+1.5".parseDataValues().sumOf { it }.compareTo(BigDecimal("2.50")) == 0)
+        assert("=100.13-100.03-0.1+10".parseDataValues().sumOf { it }.compareTo(BigDecimal("10")) == 0)
     }
 
 

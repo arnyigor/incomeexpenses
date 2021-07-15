@@ -8,6 +8,7 @@ import com.arnigor.incomeexpenses.data.repository.sheets.SheetsRepository
 import com.arnigor.incomeexpenses.presentation.models.PaymentCategory
 import com.arnigor.incomeexpenses.presentation.models.PaymentsAdapterModel
 import com.arnigor.incomeexpenses.utils.mutableLiveData
+import com.arnigor.incomeexpenses.utils.parseDataValues
 import com.google.api.client.googleapis.extensions.android.gms.auth.GooglePlayServicesAvailabilityIOException
 import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException
 import kotlinx.coroutines.Dispatchers
@@ -54,17 +55,11 @@ class DetailsViewModel @Inject constructor(
         )
         val data = cellData.takeIf { it.isNullOrBlank().not() } ?: "="
         editEnable.value = data.map { it in 'A'..'Z' }.any { it }.not()
-        paymentsDecimal = parsePaymentsFromString(data)
+        paymentsDecimal = data.parseDataValues()
         firstLoadSum = paymentsDecimal.sumOf { it }
         updateList()
         month?.let { it -> currentMonth.value = it }
     }
-
-    private fun parsePaymentsFromString(data: String) =
-        "[\\-+]\\d+\\.?\\d+".toRegex()
-            .findAll(data.replace("=", "").replace(",", "."))
-            .map { it.groupValues[0].toBigDecimalOrNull() ?: BigDecimal.ZERO }
-            .toMutableList()
 
     private fun updateList() {
         calcSumDiff()
