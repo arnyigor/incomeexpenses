@@ -17,11 +17,9 @@ import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.arnigor.incomeexpenses.R
 import com.arnigor.incomeexpenses.databinding.FragmentDetailsBinding
-import com.arnigor.incomeexpenses.utils.alertDialog
-import com.arnigor.incomeexpenses.utils.autoClean
-import com.arnigor.incomeexpenses.utils.hideKeyboard
-import com.arnigor.incomeexpenses.utils.viewBinding
+import com.arnigor.incomeexpenses.utils.*
 import dagger.android.support.AndroidSupportInjection
+import java.math.BigDecimal
 import javax.inject.Inject
 import kotlin.properties.Delegates
 
@@ -139,11 +137,16 @@ class DetailsFragment : Fragment(R.layout.fragment_details) {
                 binding.tvCategorySum.text = String.format("%s", sum.toString())
             }
         }
-        vm.confirmSaveSum.observe(viewLifecycleOwner) { sum ->
-            if (sum != null) {
+        vm.sumData.observe(viewLifecycleOwner) { sum ->
+            if (sum != null && sum.added.compareTo(BigDecimal.ZERO) != 0) {
                 alertDialog(
                     title = getString(R.string.edit_question),
-                    content = "Сохранить сумму ${sum}?",
+                    content = getString(
+                        R.string.sum_data,
+                        sum.firstLoadSum.formatNumberWithSpaces(),
+                        sum.added.formatNumberWithSpaces(),
+                        sum.totalSum.formatNumberWithSpaces()
+                    ),
                     btnCancelText = getString(android.R.string.cancel),
                     btnOkText = getString(android.R.string.ok),
                     cancelable = true,

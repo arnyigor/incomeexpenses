@@ -31,7 +31,7 @@ class DetailsViewModel @Inject constructor(
     val onBackPress = mutableLiveData(false)
     val toast = mutableLiveData<String>(null)
     val currentMonth = mutableLiveData<String>(null)
-    val confirmSaveSum = mutableLiveData<BigDecimal>(null)
+    val sumData = mutableLiveData<SumData>(null)
     private var docLink: String? = null
 
     private fun updateDocLink() {
@@ -77,7 +77,9 @@ class DetailsViewModel @Inject constructor(
     }
 
     fun confirmSave(payments: MutableList<PaymentsAdapterModel>) {
-        confirmSaveSum.value = payments.sumOf { it.sum }
+        val sum = payments.sumOf { it.sum }
+        val added = sum - firstLoadSum
+        sumData.value = SumData(firstLoadSum, added, sum)
     }
 
     fun save(payments: MutableList<PaymentsAdapterModel>) {

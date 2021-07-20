@@ -16,6 +16,7 @@
     <string name="edit">Редактировать</string>
     <string name="edit_question">Редактировать?</string>
     <string name="categories">Категория</string>
+    <string name="sum_data"><![CDATA[Было:<b>%s\u00A0₽</b>,<br>Добавлено:<b>%s\u00A0₽</b>,<br>Сумма:<b>%s\u00A0₽</b>]]></string>
     <string name="edit_question_desc"><![CDATA[Редактировать сумму категории <b>%s</b> за месяц: <b>%s</b>?]]></string>
     <string-array name="monthes">
         <item>Январь</item>
